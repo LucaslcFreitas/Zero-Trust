@@ -6,7 +6,7 @@ class PolicyDecisionPoint:
 
     def policyAdministrator(self, conn, addr, data):
         logging.info("Policy Administrator")
-        return 400
+        return 200
 
     def policyEngine(self):
         logging.info("policy Engine")
@@ -28,7 +28,7 @@ class PolicyDecisionPoint:
         logging.info("evaluate user device")
 
     # Avalia os atributos do usuário
-    def __evaluateUserAtributes(self):
+    def __evaluateUserAtributesAndContext(self):
         logging.info("Evaluate user atributes")
 
     # Avalia se o usuário possui permissão para acesso o recurso desejado

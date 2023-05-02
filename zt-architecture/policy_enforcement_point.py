@@ -51,7 +51,7 @@ class PolicyEnforcementPoint:
 
             response = ''
             match(decision):
-                case 400: # Conexão autorizada
+                case 200: # Conexão autorizada
                     logging.info(f'Authorized request for {addr}')
                     response = "Authorized requisition"
                     conn.sendall(response.encode())

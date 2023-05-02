@@ -15,7 +15,12 @@ def connect():
         conn.connect((HOST, PORT))
         print(f'Conected to {HOST}:{PORT}')
 
-        message = "CONECT electronic_health_record"
+        message = "CONECT electronic_health_record\n"
+        message += "USER_TOKEN: 8C3AED472FCB8ACCEB65725835189A89264A9A25E9226355877C75BE0C74D8A0\n"
+        message += "IP_ADDRESS: 10.0.0.0\n"
+        message += "LOCATION: 21.7755342 -43.3719626\n"
+        message += "DEVICE_MAC: 2B-40-C1-4E-34-E2"
+
         conn.sendall(message.encode())
 
         data = conn.recv(1024)
