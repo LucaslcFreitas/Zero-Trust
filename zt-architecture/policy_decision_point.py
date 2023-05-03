@@ -1,12 +1,12 @@
 import logging
-
+import response
 
 
 class PolicyDecisionPoint:
 
     def policyAdministrator(self, conn, addr, data):
-        logging.info("Policy Administrator")
-        return 200
+        print(data)
+        return response.ACCESS_ALLOWED
 
     def policyEngine(self):
         logging.info("policy Engine")

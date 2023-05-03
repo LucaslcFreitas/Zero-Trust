@@ -4,6 +4,7 @@ import concurrent.futures
 import os
 import logging
 import json
+import response
 from policy_decision_point import PolicyDecisionPoint
 
 class PolicyEnforcementPoint:
@@ -37,7 +38,7 @@ class PolicyEnforcementPoint:
 
     # Thread para tratar requisição do usuário
     def handle_client(self, conn, addr) -> None:
-        print(f'Start thred from {addr}')
+        logging.info(f'Start thred from {addr}')
 
         pdp = PolicyDecisionPoint()
 
@@ -49,14 +50,22 @@ class PolicyEnforcementPoint:
         
             decision = pdp.policyAdministrator(conn, addr, message)
 
-            response = ''
+            result = ''
             match(decision):
-                case 200: # Conexão autorizada
+                case response.ACCESS_ALLOWED: # Conexão autorizada
                     logging.info(f'Authorized request for {addr}')
-                    response = "Authorized requisition"
-                    conn.sendall(response.encode())
+                    result = "Authorized requisition"
+                    conn.sendall(result.encode())
                     logging.info(f'Connection closed with {addr}')
                     conn.close()
+                    break
+                case response.ACCESS_DENIED:
+                    logging.info(f'Denied request for {addr}')
+                    result = "Denied requisition"
+                    conn.sendall(result.encode())
+                    logging.info(f'Connection closed with {addr}')
+                    conn.close()
+                    break
 
 
 if __name__ == '__main__':
