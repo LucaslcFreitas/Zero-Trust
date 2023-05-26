@@ -5,7 +5,7 @@ import os
 import logging
 import json
 import response
-from policy_decision_point import PolicyDecisionPoint
+from PolicyDecisionPoint import PolicyDecisionPoint
 
 class PolicyEnforcementPoint:
     

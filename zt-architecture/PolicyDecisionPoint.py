@@ -19,9 +19,13 @@ class PolicyDecisionPoint:
     def __reauthenticate(self):
         logging.info("Reauthenticate")
 
-    # Avalia se o usuário está devidamente autenticado
-    def __evaluateUserCredentials(self):
+    # Valida se o usuário está devidamente autenticado
+    def __checkUserCredentials(self):
         logging.info("Evaluate user credentials")
+    
+    # Valida se o usuário possui permissão para acesso o recurso desejado
+    def __checkUserPermissions(self):
+        logging.info("evaluate user permissions")
     
     # Avalia o dispositivo utilizado pelo usuário
     def __evaluateUserDevice(self):
@@ -30,10 +34,6 @@ class PolicyDecisionPoint:
     # Avalia os atributos do usuário
     def __evaluateUserAtributesAndContext(self):
         logging.info("Evaluate user atributes")
-
-    # Avalia se o usuário possui permissão para acesso o recurso desejado
-    def __evaluateUserPermissions(self):
-        logging.info("evaluate user permissions")
 
     # Avalia o histórico de acesso do usuário
     def __evaluateUserHistory(sef):
