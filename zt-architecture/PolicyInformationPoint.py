@@ -24,6 +24,25 @@ class PolicyInformationPoint:
         if self.connection:
             self.connection.close()
 
+    def getUserAttributes(self, token) -> json:
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT nome, tipo, cpf FROM \"zt-ehealth\".\"Usuario\" WHERE id = (SELECT \"idUsuario\" FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"')")
+                result = cursor.fetchone()
+                if result:
+                    return {
+                        "nome": result[0],
+                        "tipo": result[1],
+                        "cpf": result[2]
+                    }
+                return None
+        except Exception as e:
+            print(e)
+            return None
+
     def checkTokenValidity(self, token, currentDate) -> bool:
         if not self.connection:
             self.connect()
@@ -35,6 +54,9 @@ class PolicyInformationPoint:
                 if validity:
                     if (datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - validity) <= datetime.timedelta(hours=3):
                         return True
+                    else:
+                        cursor.execute("UPDATE \"zt-ehealth\".\"Token\" SET status='Inativo' WHERE hash = '"+token+"'")
+                        self.connection.commit()
                 return False
         except Exception as e:
             print(e)
@@ -161,13 +183,14 @@ class PolicyInformationPoint:
             print(e)
             return None
         
-    def getUserPasswordHistory(self, cpf, limit) -> list:
+    def getUserPasswordHistory(self, cpf, currentDate) -> list:
         if not self.connection:
             self.connect()
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute("SELECT \"dataCriacao\", status FROM \"zt-ehealth\".\"Senha\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') LIMIT "+str(limit))
+                date = datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=3)
+                cursor.execute("SELECT \"dataCriacao\", status FROM \"zt-ehealth\".\"Senha\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND \"dataCriacao\" >= '"+str(date)+"'")
                 result = cursor.fetchall()
                 if result:
                     return result
@@ -176,13 +199,14 @@ class PolicyInformationPoint:
             print(e)
             return None
         
-    def getRegLoginHistory(self, cpf, limit) -> list:
+    def getRegLoginHistory(self, cpf, currentDate) -> list:
         if not self.connection:
             self.connect()
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute("SELECT data, resultado FROM \"zt-ehealth\".\"RegLogin\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') LIMIT "+str(limit))
+                date = datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=3)
+                cursor.execute("SELECT data, resultado FROM \"zt-ehealth\".\"RegLogin\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND data >= '"+str(date)+"'")
                 result = cursor.fetchall()
                 if result:
                     return result
@@ -191,13 +215,14 @@ class PolicyInformationPoint:
             print(e)
             return None
         
-    def getLocationAccessUser(self, cpf, limit) -> list:
+    def getLocationAccessUser(self, cpf, currentDate) -> list:
         if not self.connection:
             self.connect()
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute()
+                date = datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=3)
+                cursor.execute("SELECT latitude, longitude, data FROM \"zt-ehealth\".\"Acesso\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND data >= '"+str(date)+"'")
                 result = cursor.fetchall()
                 if result:
                     return result
@@ -206,23 +231,149 @@ class PolicyInformationPoint:
             print(e)
             return None
     
-    def privilegioReduzidoRecente():
-        print()
+    def getRecentReducedPrivilege(self, cpf, currentDate):
+        if not self.connection:
+            self.connect()
 
-    def redeNormalmenteUtilizada():
-        print()
+        try:
+            with self.connection.cursor() as cursor:
+                date = datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=336) #2 semanas
+                cursor.execute("SELECT status, \"dataExclusao\" FROM \"zt-ehealth\".\"Permissao\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND status = 'Inativo' AND \"dataExclusao\" >= '"+str(date)+"'")
+                result = cursor.fetchall()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
 
-    def historicoUsoDispositivo():
-        print()
+    def getNetworkNormallyUsedByUser(self, cpf, currentDate):
+        if not self.connection:
+            self.connect()
 
-    def getDispositivoPorMAC():
-        print()
+        try:
+            with self.connection.cursor() as cursor:
+                date = datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=336) #2 semanas
+                cursor.execute("SELECT rede, data FROM \"zt-ehealth\".\"Acesso\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND data >= '"+str(date)+"'")
+                result = cursor.fetchall()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
 
-    def getAcessoHistorico():
-        print()
+    def getAcessHistoricByDevice(self, MAC, currentDate):
+        if not self.connection:
+            self.connect()
 
-    def registrarDispositivo():
-        print()
+        try:
+            with self.connection.cursor() as cursor:
+                date = datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=336) #2 semanas
+                cursor.execute("SELECT \"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca FROM \"zt-ehealth\".\"Acesso\" WHERE \"idDispositivo\" = (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"') AND data >= '"+str(date)+"'")
+                result = cursor.fetchall()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
 
-    def registrarAcesso():
-        print()
+    def getDeviceByMAC(self, MAC):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM \"zt-ehealth\".\"CaracteristicaDispositivo\" AS c INNER JOIN \"zt-ehealth\".\"Dispositivo\" AS d ON c.\"idDispositivo\"= d.id WHERE d.\"MAC\" = '"+MAC+"' AND c.status = 'Ativo'")
+                result = cursor.fetchone()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
+
+    def checkRecentDeviceChanges(self, MAC, currentDate):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                date = datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=72) #3 dias
+                cursor.execute("SELECT \"deviceFingerPrint\", \"sistemaOperacional\", \"versaoSO\", data, status FROM \"zt-ehealth\".\"CaracteristicaDispositivo\" WHERE \"idDispositivo\" = (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"') AND data >= '"+str(date)+"'")
+                result = cursor.fetchall()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
+
+    def registerDevice(self, MAC, deviceFingerPrint, SO, versionSO, date) -> bool:
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Dispositivo\"(\"MAC\") VALUES ('"+MAC+"') RETURNING id")
+                deviceId = cursor.fetchone()[0]
+
+                if deviceId:
+                    cursor.execute("INSERT INTO \"zt-ehealth\".\"CaracteristicaDispositivo\"(\"deviceFingerPrint\", \"sistemaOperacional\", \"versaoSO\", data, status, \"idDispositivo\") VALUES ('"+deviceFingerPrint+"', '"+SO+"', '"+versionSO+"', '"+date+"', 'Ativo', "+str(deviceId)+")")
+                    self.connection.commit()
+                    return True
+                return False
+        except Exception as e:
+            print(e)
+            return False
+        
+    def updateDeviceCharacteristic(self, MAC, deviceFingerPrint, SO, versionSO, date) -> bool:
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("UPDATE \"zt-ehealth\".\"CaracteristicaDispositivo\" SET status='Inativo' WHERE \"idDispositivo\" = (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"') AND status = 'Ativo'")
+                updated = cursor.rowcount
+
+                if updated > 0:
+                    cursor.execute("INSERT INTO \"zt-ehealth\".\"CaracteristicaDispositivo\"(\"deviceFingerPrint\", \"sistemaOperacional\", \"versaoSO\", data, status, \"idDispositivo\") VALUES ('"+deviceFingerPrint+"', '"+SO+"', '"+versionSO+"', '"+date+"', 'Ativo', (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'))")
+                    self.connection.commit()
+                    return True
+                return False
+        except Exception as e:
+            print(e)
+            return False
+
+    def getAcessHistoricByUser(self, cpf, currentDate): # A Testar...
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                date = datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=24) #1 dias
+                cursor.execute("SELECT \"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca FROM \"zt-ehealth\".\"Acesso\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND data >= '"+str(date)+"'")
+                result = cursor.fetchall()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
+
+    def registerAccess(self, cpf, token, latitude, longitude, MAC, date, ipAddress, result, trust, resourceName, subResourceName, typeAction):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ((SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"'), (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"Permissao\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND \"idSubRecurso\" = ((SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"'))) AND \"tipoAcao\" = '"+typeAction+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')), (SELECT id FROM \"zt-ehealth\".\"SensibilidadeSubRecurso\" WHERE \"idSubRecurso\" = (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')) AND \"tipoAcao\" = '"+typeAction+"'), (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ipAddress+"', '"+str(trust)+"')")
+                rows_affected = cursor.rowcount
+                self.connection.commit()
+                if rows_affected > 0:
+                    return True
+                return False
+        except Exception as e:
+            print(e)
+            return False
