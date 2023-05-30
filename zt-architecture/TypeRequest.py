@@ -1,0 +1,3 @@
+
+LOGIN = 'LOGIN'
+ACCESS = 'ACCESS'

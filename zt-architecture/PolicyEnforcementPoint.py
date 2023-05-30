@@ -4,7 +4,7 @@ import concurrent.futures
 import os
 import logging
 import json
-import response
+import Response
 from PolicyDecisionPoint import PolicyDecisionPoint
 
 class PolicyEnforcementPoint:
@@ -48,24 +48,50 @@ class PolicyEnforcementPoint:
                 break
             message = data.decode()
         
-            decision = pdp.policyAdministrator(conn, addr, message)
+            try:
+                decision = pdp.policyAdministrator(message)
+            except Exception as e:
+                print(e)
 
             result = ''
             match(decision):
-                case response.ACCESS_ALLOWED: # Conexão autorizada
+                case Response.ACCESS_ALLOWED: # Conexão autorizada
                     logging.info(f'Authorized request for {addr}')
                     result = "Authorized requisition"
                     conn.sendall(result.encode())
                     logging.info(f'Connection closed with {addr}')
                     conn.close()
                     break
-                case response.ACCESS_DENIED:
+                case Response.ACCESS_DENIED:
                     logging.info(f'Denied request for {addr}')
                     result = "Denied requisition"
                     conn.sendall(result.encode())
                     logging.info(f'Connection closed with {addr}')
                     conn.close()
                     break
+                case Response.RESOURCE_NOT_FOUND:
+                    logging.info(f'Denied request for {addr}')
+                    result = "Resource not found"
+                    conn.sendall(result.encode())
+                    logging.info(f'Connection closed with {addr}')
+                    conn.close()
+                    break
+                case Response.AUTHENTICATION_REQUIRED:
+                    logging.info(f'Denied request for {addr}')
+                    result = "Authentication required"
+                    conn.sendall(result.encode())
+                    logging.info(f'Connection closed with {addr}')
+                    conn.close()
+                    break
+                case _: #default
+                    if len(decision) == 64:
+                        result = decision
+                    else:
+                        result = "Denied requisition"
+                    conn.sendall(result.encode())
+                    logging.info(f'Connection closed with {addr}')
+                    conn.close()
+                    break  
 
 
 if __name__ == '__main__':
