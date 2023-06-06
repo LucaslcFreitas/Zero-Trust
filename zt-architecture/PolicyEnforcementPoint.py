@@ -42,56 +42,87 @@ class PolicyEnforcementPoint:
 
         pdp = PolicyDecisionPoint()
 
+        opReauthentication = {
+            "inReauthentication": False,
+            "idAccess": None
+        }
+
         while(True):
             data = conn.recv(1024)
             if not data:
                 break
             message = data.decode()
+
+            # Operação de reautenticação
+            if opReauthentication["inReauthentication"]:
+                message += "ID_ACCESS "+str(opReauthentication["idAccess"])+"\n"
         
             try:
-                decision = pdp.policyAdministrator(message)
+                decision, body = pdp.policyAdministrator(message)
             except Exception as e:
-                print(e)
+                logging.error(e)
 
-            result = ''
             match(decision):
                 case Response.ACCESS_ALLOWED: # Conexão autorizada
-                    logging.info(f'Authorized request for {addr}')
-                    result = "Authorized requisition"
-                    conn.sendall(result.encode())
-                    logging.info(f'Connection closed with {addr}')
-                    conn.close()
-                    break
+                    if body["ipAddress"] and body["port"]:
+                        logging.info(f'Authorized request for {addr}')
+                        sockResource = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sockResource.connect((body["ipAddress"], body["port"]))
+                        responseResource = sockResource.recv(1024)
+                        conn.sendall(responseResource)
+                        sockResource.close()
+                    else:
+                        logging.error(f'Internal server error')
+                        result = "Internal server error"
+                        conn.sendall(result.encode())
                 case Response.ACCESS_DENIED:
                     logging.info(f'Denied request for {addr}')
                     result = "Denied requisition"
                     conn.sendall(result.encode())
-                    logging.info(f'Connection closed with {addr}')
-                    conn.close()
-                    break
                 case Response.RESOURCE_NOT_FOUND:
                     logging.info(f'Denied request for {addr}')
                     result = "Resource not found"
                     conn.sendall(result.encode())
-                    logging.info(f'Connection closed with {addr}')
-                    conn.close()
-                    break
                 case Response.AUTHENTICATION_REQUIRED:
-                    logging.info(f'Denied request for {addr}')
+                    logging.info(f'Authentication required for {addr}')
                     result = "Authentication required"
                     conn.sendall(result.encode())
-                    logging.info(f'Connection closed with {addr}')
-                    conn.close()
-                    break
-                case _: #default
-                    if len(decision) == 64:
-                        result = decision
+                case Response.REAUTHENTICATION_REQUIRED:
+                    if body["idAccess"]:
+                        logging.info(f'Reauthentication required for {addr}')   
+                        opReauthentication["inReauthentication"] = True
+                        opReauthentication["idAccess"] = body["idAccess"]
+                        result = "Reauthentication required"
+                        conn.sendall(result.encode())
                     else:
-                        result = "Denied requisition"
+                        logging.error(f'Internal server error')
+                        result = "Internal server error"
+                        conn.sendall(result.encode())
+                case Response.AUTHORIZED_LOGIN:
+                    if body["token"]:
+                        logging.info(f'Authorized login for {addr}')
+                        conn.sendall(body["token"].encode())
+                    else :
+                        logging.error(f'Login error for {addr}')
+                        result = "Internal server error"
+                        conn.sendall(result.encode())
+                case Response.INTERNAL_SERVER_ERROR:
+                    logging.error(f'Internal server error')
+                    result = "Internal server error"
                     conn.sendall(result.encode())
+                case _: #default
+                    result = "Denied requisition"
+                    conn.sendall(result.encode())
+                    logging.error(f'Unidentified answer for {addr}')
                     logging.info(f'Connection closed with {addr}')
                     conn.close()
                     break  
+
+            if decision != Response.REAUTHENTICATION_REQUIRED:
+                opReauthentication["inReauthentication"] = False
+                opReauthentication["idAccess"] = None
+        logging.info(f'Connection closed with {addr}')
+        conn.close()
 
 
 if __name__ == '__main__':

@@ -1,4 +1,27 @@
-{
-    "ip_address": "127.0.0.1",
-    "port": 6000
-}
+[
+    {
+        "resource": "Registro Eletrônico de Saúde",
+        "ip_address": "127.0.0.1",
+        "port": 7001
+    },
+    {
+        "resource": "Sistema de Informação Hospitalar",
+        "ip_address": "127.0.0.1",
+        "port": 7002
+    },
+    {
+        "resource": "Monitoramento Remoto do Paciente",
+        "ip_address": "127.0.0.1",
+        "port": 7003
+    },
+    {
+        "resource": "Portal do Paciente",
+        "ip_address": "127.0.0.1",
+        "port": 7004
+    },
+    {
+        "resource": "Telemedicina",
+        "ip_address": "127.0.0.1",
+        "port": 7005
+    }
+]

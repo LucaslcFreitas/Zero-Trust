@@ -1,0 +1,812 @@
+[
+  {
+    "Operational System": "Windows 11",
+    "Version": "22H2",
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Windows 11",
+    "Version": "21H1",
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": "21H2",
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": "21H1",
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": "20H2",
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 2004,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1909,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1903,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1809,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1803,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1709,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1703,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1607,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1511,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 10",
+    "Version": 1507,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 8",
+    "Version": 9200,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 8.1",
+    "Version": 9394,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 8.1",
+    "Version": 9431,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Windows 8.1",
+    "Version": 9600,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Windows 7",
+    "Version": 7000,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 7",
+    "Version": 7100,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 7",
+    "Version": 7600,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows 7",
+    "Version": 7601,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows XP",
+    "Version": "SP1",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows XP",
+    "Version": "SP2",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Windows XP",
+    "Version": "SP3",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 23.1,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 23.04,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 22.1,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 22.04,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 21.1,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 21.04,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 20.1,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 20.04,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 19.1,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 19.04,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 18.1,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 18.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 17.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 17.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 16.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 16.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 15.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 15.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 14.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 14.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 13.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 13.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 12.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 12.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 11.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 11.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 10.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": 10.04,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "09.10",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "09.04",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "08.10",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "08.04",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "07.10",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "07.04",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "06.10",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "06.06",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "05.10",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "05.04",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Ubuntu",
+    "Version": "04.10",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 11.7,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 11,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 10,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 9,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 8,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 7,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 6,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 5,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 4,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 3.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 3,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 2.2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 2.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 1.3,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 1.2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Linux Debian",
+    "Version": 1.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 1.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 1.5,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 1.6,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": "2.0.1",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 2.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 2.2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 2.3,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": "2.3.3",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 3,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 3.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 3.2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 4,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": "4.0.3",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 4.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 4.2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 4.3,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 4.4,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": "4.4W",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 5,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 5.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 6,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 7,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 7.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 8,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 8.1,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 9,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 10,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 11,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 12,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 12.1,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 13,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 14,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "Android",
+    "Version": 15,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 3,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 4,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 5,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 5.1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": "5.1.1",
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 6,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 7,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 8,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 9,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 10,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 11,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 12,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 13,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 14,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 15,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "IOS",
+    "Version": 16,
+    "Risk": "low"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 1,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 3,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 4,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 5,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 6,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 7,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 8,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 9,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.2,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.3,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.4,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.5,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.6,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.7,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.8,
+    "Risk": "unacceptably high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.9,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.1,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.11,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.12,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.13,
+    "Risk": "high"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.14,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 10.15,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 11,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 12,
+    "Risk": "medium"
+  },
+  {
+    "Operational System": "MAC_OS",
+    "Version": 13,
+    "Risk": "low"
+  }
+]

@@ -136,7 +136,25 @@ class PolicyInformationPoint:
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute("SELECT * FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')")
+                cursor.execute("SELECT r.\"ipAddress\", r.porta FROM \"zt-ehealth\".\"Recurso\" AS r INNER JOIN \"zt-ehealth\".\"SubRecurso\" AS s ON r.id = s.\"idRecurso\" WHERE r.nome = '"+resourceName+"' AND s.nome = '"+subResourceName+"'")
+                result = cursor.fetchone()
+                if result:
+                    return {
+                        'ipAddress': result[0],
+                        'port': result[1]
+                    }
+                return None
+        except Exception as e:
+            print(e)
+            return None
+    
+    def getResourceSocketBySubResourceId(self, subResourceId) -> json:
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT \"ipAddress\", porta FROM \"zt-ehealth\".\"Recurso\" WHERE id = (SELECT \"idRecurso\" FROM \"zt-ehealth\".\"SubRecurso\" WHERE id = "+str(subResourceId)+")")
                 result = cursor.fetchone()
                 if result:
                     return {
@@ -284,7 +302,7 @@ class PolicyInformationPoint:
             print(e)
             return None
         
-    def getHistoryLocationAccessUser(self, cpf) -> list:
+    def getHistoryLocationAccessUser(self, cpf, currentDate) -> list:
         if not self.connection:
             self.connect()
 
@@ -394,6 +412,21 @@ class PolicyInformationPoint:
         except Exception as e:
             print(e)
             return None
+        
+    def getDeviceById(self, id):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM \"zt-ehealth\".\"CaracteristicaDispositivo\" AS c INNER JOIN \"zt-ehealth\".\"Dispositivo\" AS d ON c.\"idDispositivo\"= d.id WHERE d.id = '"+str(id)+"' AND c.status = 'Ativo'")
+                result = cursor.fetchone()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
 
     def checkRecentDeviceChanges(self, MAC, currentDate):
         if not self.connection:
@@ -468,12 +501,44 @@ class PolicyInformationPoint:
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ((SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"'), (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"Permissao\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND \"idSubRecurso\" = ((SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"'))) AND \"tipoAcao\" = '"+typeAction+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')), (SELECT id FROM \"zt-ehealth\".\"SensibilidadeSubRecurso\" WHERE \"idSubRecurso\" = (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')) AND \"tipoAcao\" = '"+typeAction+"'), (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ipAddress+"', '"+str(trust)+"')")
-                rows_affected = cursor.rowcount
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ((SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"'), (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"Permissao\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND \"idSubRecurso\" = ((SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"'))) AND \"tipoAcao\" = '"+typeAction+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')), (SELECT id FROM \"zt-ehealth\".\"SensibilidadeSubRecurso\" WHERE \"idSubRecurso\" = (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')) AND \"tipoAcao\" = '"+typeAction+"'), (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ipAddress+"', '"+str(trust)+"') RETURNING id")
+                accessId = cursor.fetchone()[0]
                 self.connection.commit()
-                if rows_affected > 0:
-                    return True
-                return False
+                if accessId:
+                    return accessId
+                return None
         except Exception as e:
             print(e)
-            return False
+            return None
+    
+    def registerAccessForReauthenticate(self, idUser, token, idPermission, idSubResource, idSensibility, idDevice, latitude, longitude, date, result, ip, trust):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ("+str(idUser)+", (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), "+str(idPermission)+", "+str(idSubResource)+", "+str(idSensibility)+", "+str(idDevice)+", '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ip+"', "+str(trust)+") RETURNING id")
+                accessId = cursor.fetchone()[0]
+                self.connection.commit()
+                if accessId:
+                    return accessId
+                return None
+        except Exception as e:
+            print(e)
+            return None
+        
+    def getAccessById(self, id):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM \"zt-ehealth\".\"Acesso\" WHERE id = "+str(id)+"")
+                result = cursor.fetchone()
+                self.connection.commit()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
