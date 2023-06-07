@@ -103,16 +103,21 @@ class PolicyDecisionPoint:
         
         match (result):
             case Response.REAUTHENTICATION_REQUIRED:
-                idAccess =  self.pip.registerAccess(user['registry'], data['TOKEN'], data['LATITUDE'], data['LONGITUDE'], data['MAC'], data['TIME'], data['IP_ADDRESS'], "Reautenticacao", trust, data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'])
-                if idAccess:
-                    return result, {"idAccess": idAccess}
+                idDeviceTMP = self.__registerDeviceForAccessDeniedOrReauthenticated(data['MAC'], data['DFP'], data['OS'], data['VERSION_OS'], data['TIME'])
+                if idDeviceTMP:
+                    idAccess =  self.pip.registerAccessDeniedOrReauthenticated(user['registry'], data['TOKEN'], data['LATITUDE'], data['LONGITUDE'], data['TIME'], data['IP_ADDRESS'], "Reautenticacao", trust, data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'], idDeviceTMP)
+                    if idAccess:
+                        return result, {"idAccess": idAccess}
                 return Response.INTERNAL_SERVER_ERROR, None
             case Response.ACCESS_DENIED:
-                idAccess =  self.pip.registerAccess(user['registry'], data['TOKEN'], data['LATITUDE'], data['LONGITUDE'], data['MAC'], data['TIME'], data['IP_ADDRESS'], "Negado", trust, data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'])
-                if idAccess:
-                    return result, None
+                idDeviceTMP = self.__registerDeviceForAccessDeniedOrReauthenticated(data['MAC'], data['DFP'], data['OS'], data['VERSION_OS'], data['TIME'])
+                if idDeviceTMP:
+                    idAccess =  self.pip.registerAccessDeniedOrReauthenticated(user['registry'], data['TOKEN'], data['LATITUDE'], data['LONGITUDE'], data['TIME'], data['IP_ADDRESS'], "Negado", trust, data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'], idDeviceTMP)
+                    if idAccess:
+                        return result, None
                 return Response.INTERNAL_SERVER_ERROR, None
             case Response.ACCESS_ALLOWED:
+                self.__registerOrUpdateDevice(data['MAC'], data['DFP'], data['OS'], data['VERSION_OS'], data['TIME'])
                 idAccess =  self.pip.registerAccess(user['registry'], data['TOKEN'], data['LATITUDE'], data['LONGITUDE'], data['MAC'], data['TIME'], data['IP_ADDRESS'], "Permitido", trust, data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'])
                 if idAccess:
                     return result, resource
@@ -158,34 +163,32 @@ class PolicyDecisionPoint:
             access = self.pip.getAccessById(idAccess)
 
             # Compara atributos atuais em relação ao acesso de reautenticação
-            deviceAccess = self.pip.getDeviceById(access[4])
-            if deviceAccess[1] != dfp or deviceAccess[2] != os or deviceAccess[3] != versionOs or deviceAccess[8] != MAC:
-                print(deviceAccess[1] + " != " + dfp)
-                print(deviceAccess[2] + " != " + os)
-                print(deviceAccess[3] + " != " + versionOs)
-                print(deviceAccess[8] + " != " + MAC)
-                print("Dispositivo diferente")
+            deviceAccess = self.pip.getDeviceTMPById(access[13])
+            if deviceAccess[1] != MAC or deviceAccess[2] != dfp or deviceAccess[3] != os or deviceAccess[4] != versionOs:
                 return Response.ACCESS_DENIED, None
-            if access[9] != ip:
-                print("IP diferente")
+            if access[11] != ip:
                 return Response.ACCESS_DENIED, None
-            distance = geodesic((latitude, longitude), (access[5], access[6])).meters
+            distance = geodesic((latitude, longitude), (access[7], access[8])).meters
             if distance >= 4200:
-                print("local diferente")
                 return Response.ACCESS_DENIED, None
             currentDate = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3)))
-            diferenceTime = currentDate - access[7]
+            diferenceTime = currentDate - access[9]
             if diferenceTime > datetime.timedelta(minutes=5):
-                print("Tempo diferente")
                 return Response.ACCESS_DENIED, None
 
             resp, body = self.__login(registry, password, date)
             if resp == Response.AUTHORIZED_LOGIN and body["token"]:
                 resource = self.pip.getResourceSocketBySubResourceId(access[4])
                 if resource:
-                    newAccess =  self.pip.registerAccessForReauthenticate(access[1], body["token"], access[3], access[4], access[5], access[6], access[7], access[8], date, "Permitido", ip, access[12])
+                    self.__registerOrUpdateDevice(MAC, dfp, os, versionOs, date)
+                    newAccess =  self.pip.registerAccessForReauthenticate(access[1], body["token"], access[3], access[4], access[5], MAC, access[7], access[8], date, "Permitido", ip, access[12])
                     if newAccess:
-                        return Response.ACCESS_ALLOWED, resource
+                        resp = {
+                        'ipAddress': resource['ipAddress'],
+                        'port': resource['port'],
+                        'token': body['token']
+                    }
+                        return Response.REAUTHENTICATION_ALLOWED, resp
         return Response.ACCESS_DENIED, None
 
     # Valida se o usuário está devidamente autenticado
@@ -351,7 +354,6 @@ class PolicyDecisionPoint:
         
         device = self.pip.getDeviceByMAC(MAC)
 
-
         # Dispositivo compartilhado por outros usuários
         if device:
             usersIndex = []
@@ -370,7 +372,7 @@ class PolicyDecisionPoint:
             idCDB, dfpDB, osDB, versionOsDB, dateDB,statusDB, idD1DB, idD2DB, macDB = self.pip.getDeviceByMAC(MAC)
             if (dfpDB != dfp) or (osDB != os) or (versionOsDB != versionOs):
                 trust -= 20
-                self.pip.updateDeviceCharacteristic(MAC, dfp, os, versionOs, date)
+                #self.pip.updateDeviceCharacteristic(MAC, dfp, os, versionOs, date)
 
         # Dispositivo com verção de sistema menos seguros
         with open(oss.path.dirname(oss.path.abspath(__file__)) + "/deviceVersionRisk.json") as file:
@@ -394,7 +396,7 @@ class PolicyDecisionPoint:
         # Dispositivo nunca utilizado
         if not device:
             trust -= 60
-            self.pip.registerDevice(MAC, dfp, os, versionOs, date)
+            #self.pip.registerDevice(MAC, dfp, os, versionOs, date)
         
         if trust > 0:
             return trust
@@ -436,3 +438,15 @@ class PolicyDecisionPoint:
                 trust -= 45
 
         return trust
+    
+    def __registerOrUpdateDevice(self, MAC, dfp, os, versionOs, date):
+        device = self.pip.getDeviceByMAC(MAC)
+        if device:
+            idCDB, dfpDB, osDB, versionOsDB, dateDB, statusDB, idD1DB, idD2DB, macDB = device
+            if (dfpDB != dfp) or (osDB != os) or (versionOsDB != versionOs):
+                self.pip.updateDeviceCharacteristic(MAC, dfp, os, versionOs, date)
+        else:
+            self.pip.registerDevice(MAC, dfp, os, versionOs, date)
+
+    def __registerDeviceForAccessDeniedOrReauthenticated(self, MAC, dfp, os, versionOs, date):
+        return self.pip.registerDeviceTMP(MAC, dfp, os, versionOs, date)

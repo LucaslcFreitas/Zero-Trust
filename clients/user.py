@@ -24,25 +24,25 @@ def connect():
         # message += "IP_ADDRESS 172.16.10.1\n"
         # message += "LATITUDE 21.7755342\n"
         # message += "LONGITUDE -43.3719626\n"
-        # message += "MAC CA-14-17-8F-9E-9G\n"
+        # message += "MAC CA-14-17-8F-9E-9F\n"
         # message += "DFP 29930a0e2ea9e88d47e59571862aaf2c01781cbef7dbac0615e9efe383c8235b\n"
-        # message += "OS Windows-10-10.0.19045-SP0\n"
-        # message += "VERSION_OS 20H2\n"
-        # message += "TIME 2023-05-29 10:45:58.649878\n"
+        # message += "OS Windows 10\n"
+        # message += "VERSION_OS 21H2\n"
+        # message += "TIME 2023-06-04 20:36:19.047062\n"
 
         message = "ACCESS\n"
         message += "RESOURCE Registro Eletrônico de Saúde\n"
         message += "SUB_RESOURCE Notas Clínicas\n"
         message += "TYPE_ACTION Escrita\n"
-        message += "TOKEN 5c934c33e0a203e2a6865a530daaa036836aad06e38bffc5a49aadb80c0d6227\n"
+        message += "TOKEN aaf55d55def8466fcec91becca5b387ddf0262e27f05f759fd25edf430c6abc3\n"
         message += "IP_ADDRESS 172.16.10.1/24\n"
         message += "LATITUDE -21.7755342\n"
         message += "LONGITUDE -43.3719626\n"
-        message += "MAC CA-14-17-8F-9E-9F\n"
+        message += "MAC CA-14-17-8G-9E-9F\n"
         message += "DFP 29930a0e2ea9e88d47e59571862aaf2c01781cbef7dbac0615e9efe383c8235b\n"
         message += "OS Windows 10\n"
         message += "VERSION_OS 21H2\n"
-        message += "TIME 2023-06-04 23:36:19.047062\n"
+        message += "TIME 2023-06-04 21:36:19.047062\n"
 
         # message = "UPDATE_PASSWORD\n"
         # message += "TOKEN a73598d1e41235360363faff1d7876462429b2461d5cbedd01c19cd5b58275c2\n"
@@ -65,17 +65,17 @@ def connect():
         print(f'Recebido do servidor: {resposta}')
         if resposta == 'Reauthentication required':
             message = "REAUTHENTICATION\n"
-            message += "TOKEN 5c934c33e0a203e2a6865a530daaa036836aad06e38bffc5a49aadb80c0d6227\n"
+            message += "TOKEN aaf55d55def8466fcec91becca5b387ddf0262e27f05f759fd25edf430c6abc3\n"
             message += "REGISTRY 460.395.930-32\n"
             message += "PASSWORD URtrE4lfJ7\n"
             message += "IP_ADDRESS 172.16.10.1/24\n"
             message += "LATITUDE -21.7755342\n"
             message += "LONGITUDE -43.3719626\n"
-            message += "MAC CA-14-17-8F-9E-9F\n"
+            message += "MAC CA-14-17-8G-9E-9F\n"
             message += "DFP 29930a0e2ea9e88d47e59571862aaf2c01781cbef7dbac0615e9efe383c8235b\n"
             message += "OS Windows 10\n"
             message += "VERSION_OS 21H2\n"
-            message += "TIME 2023-06-04 23:37:19.047062\n"
+            message += "TIME 2023-06-04 21:37:19.047062\n"
 
             conn.sendall(message.encode())
             data = conn.recv(1024)
@@ -90,14 +90,14 @@ def connect():
     print('Closed connection')
 
 if __name__ == '__main__':
-    connect()
+    # connect()
     # print(platform.platform())
     # print(datetime.datetime.now() + datetime.timedelta(hours=3))
     #print(datetime.time(9,58, 36))
     # print(datetime.datetime.now())
     # senha = f'6CQ3jhgO1I{datetime.datetime.now()}'
-    # senha = f'URtrE4lfJ7'
-    # print(hashlib.sha256(senha.encode('utf-8')).hexdigest())
+    senha = f'6CQ3jhgO1I'
+    print(hashlib.sha256(senha.encode('utf-8')).hexdigest())
 
     # # Obtém a data e hora atual
     # agora = datetime.datetime.now()

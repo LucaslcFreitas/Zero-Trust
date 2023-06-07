@@ -28,7 +28,7 @@ def start_resource(name, ip, port):
         t.start()
 
 def handle_conection(conn, resourceName):
-    response = "RESOURCE_ANSWER " + resourceName
+    response = resourceName
     conn.sendall(response.encode())
     conn.close()
 

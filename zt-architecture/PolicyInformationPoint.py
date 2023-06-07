@@ -70,9 +70,9 @@ class PolicyInformationPoint:
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute("SELECT validade FROM \"zt-ehealth\".\"Token\" WHERE hash = '" + token + "' AND status = 'Ativo'")
-                validity = cursor.fetchone()[0]
+                validity = cursor.fetchone()
                 if validity:
-                    if (datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) <= validity):
+                    if (datetime.datetime.strptime(currentDate, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) <= validity[0]):
                         return True
                     else:
                         cursor.execute("UPDATE \"zt-ehealth\".\"Token\" SET status='Inativo' WHERE hash = '"+token+"'")
@@ -427,6 +427,21 @@ class PolicyInformationPoint:
         except Exception as e:
             print(e)
             return None
+        
+    def getDeviceTMPById(self, id):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM \"zt-ehealth\".\"DispositivoTMP\" WHERE id = "+str(id)+"")
+                result = cursor.fetchone()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None
 
     def checkRecentDeviceChanges(self, MAC, currentDate):
         if not self.connection:
@@ -461,6 +476,23 @@ class PolicyInformationPoint:
         except Exception as e:
             print(e)
             return False
+        
+    def registerDeviceTMP(self, MAC, deviceFingerPrint, OS, versionOS, date) -> bool:
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"DispositivoTMP\" (\"MAC\", \"deviceFingerPrint\", \"SistemaOperacional\", \"versaoSO\", data) VALUES ('"+MAC+"', '"+deviceFingerPrint+"', '"+OS+"', '"+versionOS+"', '"+date+"') RETURNING id")
+                deviceId = cursor.fetchone()[0]
+
+                if deviceId:
+                    self.connection.commit()
+                    return deviceId
+                return None
+        except Exception as e:
+            print(e)
+            return None
         
     def updateDeviceCharacteristic(self, MAC, deviceFingerPrint, SO, versionSO, date) -> bool:
         if not self.connection:
@@ -501,7 +533,7 @@ class PolicyInformationPoint:
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ((SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"'), (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"Permissao\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND \"idSubRecurso\" = ((SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"'))) AND \"tipoAcao\" = '"+typeAction+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')), (SELECT id FROM \"zt-ehealth\".\"SensibilidadeSubRecurso\" WHERE \"idSubRecurso\" = (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')) AND \"tipoAcao\" = '"+typeAction+"'), (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ipAddress+"', '"+str(trust)+"') RETURNING id")
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ((SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"'), (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"Permissao\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND \"idSubRecurso\" = ((SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"'))) AND \"tipoAcao\" = '"+typeAction+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')), (SELECT id FROM \"zt-ehealth\".\"SensibilidadeSubRecurso\" WHERE \"idSubRecurso\" = (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')) AND \"tipoAcao\" = '"+typeAction+"'), (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ipAddress+"', "+str(trust)+") RETURNING id")
                 accessId = cursor.fetchone()[0]
                 self.connection.commit()
                 if accessId:
@@ -511,13 +543,29 @@ class PolicyInformationPoint:
             print(e)
             return None
     
-    def registerAccessForReauthenticate(self, idUser, token, idPermission, idSubResource, idSensibility, idDevice, latitude, longitude, date, result, ip, trust):
+    def registerAccessDeniedOrReauthenticated(self, cpf, token, latitude, longitude, date, ipAddress, result, trust, resourceName, subResourceName, typeAction, idDeviceTMP):
         if not self.connection:
             self.connect()
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ("+str(idUser)+", (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), "+str(idPermission)+", "+str(idSubResource)+", "+str(idSensibility)+", "+str(idDevice)+", '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ip+"', "+str(trust)+") RETURNING id")
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", latitude, longitude, data, resultado, rede, confianca, \"idDispositivoTMP\") VALUES ((SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"'), (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"Permissao\" WHERE \"idUsuario\" = (SELECT id FROM \"zt-ehealth\".\"Usuario\" WHERE cpf = '"+cpf+"') AND \"idSubRecurso\" = ((SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"'))) AND \"tipoAcao\" = '"+typeAction+"' AND status = 'Ativo'), (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')), (SELECT id FROM \"zt-ehealth\".\"SensibilidadeSubRecurso\" WHERE \"idSubRecurso\" = (SELECT id FROM \"zt-ehealth\".\"SubRecurso\" WHERE nome = '"+subResourceName+"' AND \"idRecurso\" = (SELECT id FROM \"zt-ehealth\".\"Recurso\" WHERE nome = '"+resourceName+"')) AND \"tipoAcao\" = '"+typeAction+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ipAddress+"', "+str(trust)+", "+str(idDeviceTMP)+") RETURNING id")
+                accessId = cursor.fetchone()[0]
+                self.connection.commit()
+                if accessId:
+                    return accessId
+                return None
+        except Exception as e:
+            print(e)
+            return None
+    
+    def registerAccessForReauthenticate(self, idUser, token, idPermission, idSubResource, idSensibility, MAC, latitude, longitude, date, result, ip, trust):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ("+str(idUser)+", (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), "+str(idPermission)+", "+str(idSubResource)+", "+str(idSensibility)+", (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ip+"', "+str(trust)+") RETURNING id")
                 accessId = cursor.fetchone()[0]
                 self.connection.commit()
                 if accessId:
