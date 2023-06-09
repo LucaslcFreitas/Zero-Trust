@@ -29,7 +29,7 @@ def start_resource(name, ip, port):
 
 def handle_conection(conn, resourceName):
     response = resourceName
-    conn.sendall(response.encode())
+    conn.sendall(response.encode('utf-8'))
     conn.close()
 
 

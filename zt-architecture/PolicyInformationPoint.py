@@ -590,3 +590,18 @@ class PolicyInformationPoint:
         except Exception as e:
             print(e)
             return None
+        
+    def getAllHistory(self):
+        if not self.connection:
+            self.connect()
+
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM \"zt-ehealth\".\"Acesso\"")
+                result = cursor.fetchall()
+                if result:
+                    return result
+                return None
+        except Exception as e:
+            print(e)
+            return None

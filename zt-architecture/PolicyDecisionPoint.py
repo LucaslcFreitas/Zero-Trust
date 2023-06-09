@@ -24,7 +24,7 @@ class PolicyDecisionPoint:
         for line in lines[1:]:
             key, value = line.split(' ', 1)
             data[key] = value
-
+        
         match(data['TYPE']):
             case TypeRequest.LOGIN:
                 if (data['REGISTRY'] and data['PASSWORD'] and data['IP_ADDRESS'] and data['LATITUDE'] and data['LONGITUDE'] and data['MAC'] and data['DFP'] and data['OS'] and data['VERSION_OS'] and data['TIME']):
@@ -62,25 +62,25 @@ class PolicyDecisionPoint:
 
         try:
             # Calcula a confiança com base no usuário e contexto
-            userTrust = 0 #self.__evaluateUserAtributesAndContext(user['registry'], data['TIME'], data['LATITUDE'], data['LONGITUDE'], data['IP_ADDRESS'], user['type'])
+            userTrust = self.__evaluateUserAtributesAndContext(user['registry'], data['TIME'], data['LATITUDE'], data['LONGITUDE'], data['IP_ADDRESS'], user['type'])
         
             # Calcula a confiança com base no dispositivo do usuário
-            deviceTrust = 0 #self.__evaluateUserDevice(data['MAC'], data['DFP'], data['OS'], data['VERSION_OS'], data['TIME'])
+            deviceTrust = self.__evaluateUserDevice(data['MAC'], data['DFP'], data['OS'], data['VERSION_OS'], data['TIME'])
         
             # Calcula a confiança com base no histórico de acesso
-            historyTrust = 0 #self.__evaluateUserHistory(user['registry'], data['TIME'])
+            historyTrust = self.__evaluateUserHistory(user['registry'], data['TIME'])
 
             # Pega a sensibilidade do recurso
-            sensitivity = 0 #self.pip.getResourceSensibilityByName(data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'])
+            sensitivity = self.pip.getResourceSensibilityByName(data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'])
         except Exception as e:
             print(e)
             return Response.INTERNAL_SERVER_ERROR, None
 
-
+    
         # Calcula a confinça final
         trust = 0
         if historyTrust == 0:
-            trust = math.sqrt(userTrust * deviceTrust) * 0.01
+            trust = math.sqrt(userTrust * deviceTrust) * 0.1
         else:
             trust = math.sqrt(userTrust * deviceTrust) * (historyTrust/100)
 
@@ -127,9 +127,9 @@ class PolicyDecisionPoint:
 
     # Realiza login do usuário
     def __login(self, registry, password, date) -> str:
-        pswToken = hashlib.sha256(str(password).encode()).hexdigest()
+        pswToken = hashlib.sha256(str(password).encode('utf-8')).hexdigest()
         auxUserToken = registry + password + str(datetime.datetime.now()) + str(random.randint(1, 100000))
-        userToken = hashlib.sha256(str(auxUserToken).encode()).hexdigest()
+        userToken = hashlib.sha256(str(auxUserToken).encode('utf-8')).hexdigest()
         validity = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f") + datetime.timedelta(hours=3)
         result = 'Negado'
 
@@ -142,12 +142,12 @@ class PolicyDecisionPoint:
         return Response.ACCESS_DENIED, None
     
     def __updatePassword(self, token, oldPsw, newPsw, date):
-        oldPswToken = hashlib.sha256(str(oldPsw).encode()).hexdigest()
+        oldPswToken = hashlib.sha256(str(oldPsw).encode('utf-8')).hexdigest()
         if self.__checkUserCredentials(token, date):
             user = self.pip.getUserAttributes(token)
-            newPswToken = hashlib.sha256(str(newPsw).encode()).hexdigest()
+            newPswToken = hashlib.sha256(str(newPsw).encode('utf-8')).hexdigest()
             auxUserToken = user["registry"] + newPsw + str(datetime.datetime.now()) + str(random.randint(1, 100000))
-            newUserToken = hashlib.sha256(str(auxUserToken).encode()).hexdigest()
+            newUserToken = hashlib.sha256(str(auxUserToken).encode('utf-8')).hexdigest()
             validity = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f") + datetime.timedelta(hours=3)
             if self.pip.checkPasswordValidity(user["registry"], oldPswToken):
                 if self.pip.updatePassword(user["registry"], newPswToken, date):
@@ -311,7 +311,8 @@ class PolicyDecisionPoint:
                 auxT2 = nDate - auxHs2
                 if auxT1 < auxT2:
                     hoursOut = auxT1.total_seconds() / 3600
-                hoursOut = auxT2.total_seconds() / 3600
+                else:
+                    hoursOut = auxT2.total_seconds() / 3600
             
             if hoursOut > 0 and hoursOut <= 1:
                 trust -= 5
@@ -372,7 +373,6 @@ class PolicyDecisionPoint:
             idCDB, dfpDB, osDB, versionOsDB, dateDB,statusDB, idD1DB, idD2DB, macDB = self.pip.getDeviceByMAC(MAC)
             if (dfpDB != dfp) or (osDB != os) or (versionOsDB != versionOs):
                 trust -= 20
-                #self.pip.updateDeviceCharacteristic(MAC, dfp, os, versionOs, date)
 
         # Dispositivo com verção de sistema menos seguros
         with open(oss.path.dirname(oss.path.abspath(__file__)) + "/deviceVersionRisk.json") as file:
@@ -390,13 +390,12 @@ class PolicyDecisionPoint:
                                 trust -= 20
                         unknownRisk = False
                         break
-                if not unknownRisk:
+                if unknownRisk:
                     trust -= 20
 
         # Dispositivo nunca utilizado
         if not device:
             trust -= 60
-            #self.pip.registerDevice(MAC, dfp, os, versionOs, date)
         
         if trust > 0:
             return trust
@@ -407,6 +406,9 @@ class PolicyDecisionPoint:
 
         # Média da confiança das ultimas X requisições
         trust = self.pip.getAverageTrustAccess(registry)
+        if not trust:
+            trust = 0
+        trust = (100 + trust) / 2
 
         historyWithSensibility = self.pip.getAccessHistoryWithSensibility(registry, date)
 
@@ -415,7 +417,7 @@ class PolicyDecisionPoint:
             countHighlySensitive = 0
             timeLimit = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3)))
             for hs in historyWithSensibility:
-                if hs[13] >= 75 and hs[9] > timeLimit:
+                if hs[14] >= 75 and hs[9] > timeLimit:
                     countHighlySensitive += 1
             if countHighlySensitive >= 5 and countHighlySensitive < 8:
                 trust -= 15
@@ -437,7 +439,9 @@ class PolicyDecisionPoint:
             elif countDeniAccess >= 13:
                 trust -= 45
 
-        return trust
+        if trust > 0:
+            return trust
+        return 0
     
     def __registerOrUpdateDevice(self, MAC, dfp, os, versionOs, date):
         device = self.pip.getDeviceByMAC(MAC)

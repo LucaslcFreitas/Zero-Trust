@@ -1,15 +1,23 @@
 import socket
 import ssl
-import datetime
-import hashlib
-import platform
+import os
+import json
 
 HOST = '127.0.0.1'
 PORT = 5000
 
 def connect():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        # Dados de usuário
+        token = None
+        registry = None
+        password = None
+
+        # Arquivo com as instâncias de acesso
+        with open(os.path.dirname(os.path.abspath(__file__)) + "/userInstance4.json") as file:
+            instance = json.load(file)
         
+        # Conexão com o servidor Zero Trust (aceitando certificado ssl auto assinado)
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
@@ -18,99 +26,96 @@ def connect():
         conn.connect((HOST, PORT))
         print(f'Conected to {HOST}:{PORT}')
 
-        # message = "LOGIN\n"
-        # message += "REGISTRY 460.395.930-32\n"
-        # message += "PASSWORD URtrE4lfJ7\n"
-        # message += "IP_ADDRESS 172.16.10.1\n"
-        # message += "LATITUDE 21.7755342\n"
-        # message += "LONGITUDE -43.3719626\n"
-        # message += "MAC CA-14-17-8F-9E-9F\n"
-        # message += "DFP 29930a0e2ea9e88d47e59571862aaf2c01781cbef7dbac0615e9efe383c8235b\n"
-        # message += "OS Windows 10\n"
-        # message += "VERSION_OS 21H2\n"
-        # message += "TIME 2023-06-04 20:36:19.047062\n"
+        if instance:
+            for access in instance:
+                match (access['TYPE']):
+                    case 'LOGIN':
+                        registry = access['REGISTRY']
+                        password = access['PASSWORD']
 
-        message = "ACCESS\n"
-        message += "RESOURCE Registro Eletrônico de Saúde\n"
-        message += "SUB_RESOURCE Notas Clínicas\n"
-        message += "TYPE_ACTION Escrita\n"
-        message += "TOKEN aaf55d55def8466fcec91becca5b387ddf0262e27f05f759fd25edf430c6abc3\n"
-        message += "IP_ADDRESS 172.16.10.1/24\n"
-        message += "LATITUDE -21.7755342\n"
-        message += "LONGITUDE -43.3719626\n"
-        message += "MAC CA-14-17-8G-9E-9F\n"
-        message += "DFP 29930a0e2ea9e88d47e59571862aaf2c01781cbef7dbac0615e9efe383c8235b\n"
-        message += "OS Windows 10\n"
-        message += "VERSION_OS 21H2\n"
-        message += "TIME 2023-06-04 21:36:19.047062\n"
+                        message = access['TYPE'] + "\n"
+                        message += "REGISTRY " + access['REGISTRY'] + "\n"
+                        message += "PASSWORD " + access['PASSWORD'] + "\n"
+                        message += "IP_ADDRESS " + access['IP_ADDRESS'] + "\n"
+                        message += "LATITUDE " + access['LATITUDE'] + "\n"
+                        message += "LONGITUDE " + access['LONGITUDE'] + "\n"
+                        message += "MAC " + access['MAC'] + "\n"
+                        message += "DFP " + access['DFP'] + "\n"
+                        message += "OS " + access['OS'] + "\n"
+                        message += "VERSION_OS " + access['VERSION_OS'] + "\n"
+                        message += "TIME " + access['TIME'] + "\n"
 
-        # message = "UPDATE_PASSWORD\n"
-        # message += "TOKEN a73598d1e41235360363faff1d7876462429b2461d5cbedd01c19cd5b58275c2\n"
-        # message += "OLD_PASSWORD URtrE4lfJ7\n"
-        # message += "NEW_PASSWORD exuXJ1Cthq\n"
-        # message += "IP_ADDRESS 172.16.10.1/24\n"
-        # message += "LATITUDE -21.7755342\n"
-        # message += "LONGITUDE -43.3719626\n"
-        # message += "MAC CA-14-17-8F-9E-9F\n"
-        # message += "DFP 29930a0e2ea9e88d47e59571862aaf2c01781cbef7dbac0615e9efe383c8235b\n"
-        # message += "OS Windows-10-10.0.19045-SP0\n"
-        # message += "VERSION_OS 20H2\n"
-        # message += "TIME 2023-06-04 23:24:19.047062\n"
+                        conn.sendall(message.encode('utf-8'))
 
-        conn.sendall(message.encode())
+                        data = conn.recv(1024)
+                        resposta = data.decode('utf-8')
+                        lines = resposta.strip().split('\n')
+                        data = {}
+                        data['RESULT'] = lines[0]
+                        for line in lines[1:]:
+                            key, value = line.split(' ', 1)
+                            data[key] = value
+                        if data['RESULT'] == 'AUTHORIZED_LOGIN':
+                            print(data['RESULT'])
+                            token = data['TOKEN']
+                        else:
+                            print("Login error")
+                            break
+                    
+                    case 'ACCESS':
+                        message = "ACCESS\n"
+                        message += "RESOURCE " + access['RESOURCE'] + "\n"
+                        message += "SUB_RESOURCE " + access['SUB_RESOURCE'] + "\n"
+                        message += "TYPE_ACTION " + access['TYPE_ACTION'] + "\n"
+                        message += "TOKEN " + token + "\n"
+                        message += "IP_ADDRESS " + access['IP_ADDRESS'] + "\n"
+                        message += "LATITUDE " + access['LATITUDE'] + "\n"
+                        message += "LONGITUDE " + access['LONGITUDE'] + "\n"
+                        message += "MAC " + access['MAC'] + "\n"
+                        message += "DFP " + access['DFP'] + "\n"
+                        message += "OS " + access['OS'] + "\n"
+                        message += "VERSION_OS " + access['VERSION_OS'] + "\n"
+                        message += "TIME " + access['TIME'] + "\n"
+                        
+                        conn.sendall(message.encode('utf-8'))
 
-        data = conn.recv(1024)
-        resposta = data.decode()
+                        data = conn.recv(1024)
+                        resposta = data.decode('utf-8')
 
-        print(f'Recebido do servidor: {resposta}')
-        if resposta == 'Reauthentication required':
-            message = "REAUTHENTICATION\n"
-            message += "TOKEN aaf55d55def8466fcec91becca5b387ddf0262e27f05f759fd25edf430c6abc3\n"
-            message += "REGISTRY 460.395.930-32\n"
-            message += "PASSWORD URtrE4lfJ7\n"
-            message += "IP_ADDRESS 172.16.10.1/24\n"
-            message += "LATITUDE -21.7755342\n"
-            message += "LONGITUDE -43.3719626\n"
-            message += "MAC CA-14-17-8G-9E-9F\n"
-            message += "DFP 29930a0e2ea9e88d47e59571862aaf2c01781cbef7dbac0615e9efe383c8235b\n"
-            message += "OS Windows 10\n"
-            message += "VERSION_OS 21H2\n"
-            message += "TIME 2023-06-04 21:37:19.047062\n"
+                        if resposta == "REAUTHENTICATION_REQUIRED":
+                            message = "REAUTHENTICATION\n"
+                            message += "TOKEN " + token + "\n"
+                            message += "REGISTRY " + registry + "\n"
+                            message += "PASSWORD " + password + "\n"
+                            message += "IP_ADDRESS " + access['IP_ADDRESS'] + "\n"
+                            message += "LATITUDE " + access['LATITUDE'] + "\n"
+                            message += "LONGITUDE " + access['LONGITUDE'] + "\n"
+                            message += "MAC " + access['MAC'] + "\n"
+                            message += "DFP " + access['DFP'] + "\n"
+                            message += "OS " + access['OS'] + "\n"
+                            message += "VERSION_OS " + access['VERSION_OS'] + "\n"
+                            message += "TIME " + access['TIME'] + "\n"
+                            
+                            conn.sendall(message.encode('utf-8'))
 
-            conn.sendall(message.encode())
-            data = conn.recv(1024)
-            resposta = data.decode()
-
-            print(f'Recebido do servidor: {resposta}')
-        else:
-            print("n deu n")
-
+                            data = conn.recv(1024)
+                            resposta = data.decode('utf-8')
+                            lines = resposta.strip().split('\n')
+                            data = {}
+                            data['RESULT'] = lines[0]
+                            if data['RESULT'] == "REAUTHENTICATION_ALLOWED":
+                                for line in lines[1:]:
+                                    key, value = line.split(' ', 1)
+                                    data[key] = value
+                                token = data['TOKEN']
+                                print(resposta)
+                            else:
+                                print(data['RESULT'])
+                        else:
+                            print(resposta)
         conn.close()
 
     print('Closed connection')
 
 if __name__ == '__main__':
-    # connect()
-    # print(platform.platform())
-    # print(datetime.datetime.now() + datetime.timedelta(hours=3))
-    #print(datetime.time(9,58, 36))
-    # print(datetime.datetime.now())
-    # senha = f'6CQ3jhgO1I{datetime.datetime.now()}'
-    senha = f'6CQ3jhgO1I'
-    print(hashlib.sha256(senha.encode('utf-8')).hexdigest())
-
-    # # Obtém a data e hora atual
-    # agora = datetime.datetime.now()
-
-    # # Define a duração de uma hora usando timedelta
-    # uma_hora = datetime.timedelta(hours=1)
-
-    # # Adiciona uma hora à data e hora atual
-    # nova_data_hora = agora + uma_hora
-
-    # # Imprime a nova data e hora
-    # print(agora)
-    # print(nova_data_hora)
-    # data = datetime.datetime(2023, 5, 27)
-    # nome_dia_da_semana = datetime.date(data.year, data.month, data.day).strftime('%A')
-    # print(nome_dia_da_semana)
+    connect()

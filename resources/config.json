@@ -1,11 +1,11 @@
 [
     {
-        "resource": "Registro Eletrônico de Saúde",
+        "resource": "Registro Eletronico de Saude",
         "ip_address": "127.0.0.1",
         "port": 7001
     },
     {
-        "resource": "Sistema de Informação Hospitalar",
+        "resource": "Sistema de Informacao Hospitalar",
         "ip_address": "127.0.0.1",
         "port": 7002
     },
