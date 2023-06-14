@@ -48,17 +48,19 @@ class PolicyDecisionPoint:
             #registrar acesso negado...
             return Response.AUTHENTICATION_REQUIRED, None
 
-        # Verifica se o recurso e subrecurso existe
-        resource = self.pip.getSubResourceSocketByName(data['RESOURCE'], data['SUB_RESOURCE'])
-        if not resource:
-            return Response.RESOURCE_NOT_FOUND, None
-
-        # Verifica se o usuário possui permissão para acessar o recurso
-        if not self.pip.checkResourceUserPermissions(data['TOKEN'], data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'], data['TIME']):
-            return Response.ACCESS_DENIED, None
-
         # Pega as credênciais do usuário
         user = self.pip.getUserAttributes(data['TOKEN'])
+
+        # Verifica se o recurso e subrecurso existe, caso contrário o acesso é nogado e registrado com confiança mínima
+        resource = self.pip.getSubResourceSocketByName(data['RESOURCE'], data['SUB_RESOURCE'])
+        if not resource:
+            self.pip.registerAccessDeniedOrReauthenticated(user['registry'], data['TOKEN'], data['LATITUDE'], data['LONGITUDE'], data['TIME'], data['IP_ADDRESS'], "Negado", 5, data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'], idDeviceTMP)
+            return Response.RESOURCE_NOT_FOUND, None
+
+        # Verifica se o usuário possui permissão para acessar o recurso, caso contrário o acesso é nogado e registrado com confiança mínima
+        if not self.pip.checkResourceUserPermissions(data['TOKEN'], data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'], data['TIME']):
+            self.pip.registerAccessDeniedOrReauthenticated(user['registry'], data['TOKEN'], data['LATITUDE'], data['LONGITUDE'], data['TIME'], data['IP_ADDRESS'], "Negado", 5, data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'], idDeviceTMP)
+            return Response.ACCESS_DENIED, None
 
         try:
             # Calcula a confiança com base no usuário e contexto
@@ -76,7 +78,9 @@ class PolicyDecisionPoint:
             print(e)
             return Response.INTERNAL_SERVER_ERROR, None
 
-    
+        print("User trust: " + str(userTrust))
+        print("Device trust: " + str(deviceTrust))
+        print("History trust: " + str(historyTrust))
         # Calcula a confinça final
         trust = 0
         if historyTrust == 0:
@@ -141,6 +145,7 @@ class PolicyDecisionPoint:
             return Response.AUTHORIZED_LOGIN, {"token": userToken}
         return Response.ACCESS_DENIED, None
     
+    # Realiza autalização de senha do usuário
     def __updatePassword(self, token, oldPsw, newPsw, date):
         oldPswToken = hashlib.sha256(str(oldPsw).encode('utf-8')).hexdigest()
         if self.__checkUserCredentials(token, date):
@@ -155,7 +160,7 @@ class PolicyDecisionPoint:
                         return Response.UPDATED_PASSWORD, {"token": newUserToken}
             else:
                 self.pip.registerLoginAndToken(user["registry"], newPswToken, date, 'Negado', newUserToken, validity)
-        return Response.ACCESS_DENIED, None
+        return Response.UNAUTHORIZED_PASSWORD_UPDATE, None
 
     # Realiza reautenticação do usuário
     def __reauthenticate(self, token, registry, password, date, idAccess, MAC, dfp,os, versionOs, ip, latitude, longitude):
@@ -181,7 +186,7 @@ class PolicyDecisionPoint:
                 resource = self.pip.getResourceSocketBySubResourceId(access[4])
                 if resource:
                     self.__registerOrUpdateDevice(MAC, dfp, os, versionOs, date)
-                    newAccess =  self.pip.registerAccessForReauthenticate(access[1], body["token"], access[3], access[4], access[5], MAC, access[7], access[8], date, "Permitido", ip, access[12])
+                    newAccess =  self.pip.registerAccessAllowedForReauthenticate(access[1], body["token"], access[3], access[4], access[5], MAC, access[7], access[8], date, "Permitido", ip, access[12])
                     if newAccess:
                         resp = {
                         'ipAddress': resource['ipAddress'],
@@ -190,6 +195,12 @@ class PolicyDecisionPoint:
                     }
                         return Response.REAUTHENTICATION_ALLOWED, resp
         return Response.ACCESS_DENIED, None
+    
+    # Registra negação de acesso por falta de reautenticação
+    def registerDeniedForNotReauthentication(self, idAccess):
+        access = self.pip.getAccessById(idAccess)
+        if access:
+            self.pip.registerAccessDeniedForReauthenticate(access[1], access[2], access[3], access[4], access[5], access[7], access[8], access[9], "Negado", access[11], access[12], access[13])
 
     # Valida se o usuário está devidamente autenticado
     def __checkUserCredentials(self, token, date):
@@ -203,18 +214,18 @@ class PolicyDecisionPoint:
         trust = 100.0
         
         # Avalia logins recentes
-        recentLogins = self.pip.getRegLoginHistory(registry, date)
+        recentLogins = self.pip.getRegLoginDeniedHistory(registry, date)
         countFailedLogins = 0
         if recentLogins:
             for login in recentLogins:
                 if login[1] == 'Negado':
                     countFailedLogins += 1
         if countFailedLogins >= 1 and countFailedLogins < 4:
-            trust -= 5
+            trust -= 35
         elif countFailedLogins >= 4 and countFailedLogins < 7:
-            trust -= 9
+            trust -= 47
         elif countFailedLogins >= 7:
-            trust -= 13
+            trust -= 60
         
 
         # Avalia troca de senhas recentes
@@ -223,28 +234,34 @@ class PolicyDecisionPoint:
         if recentPasswordChanges:
             countPasswordChanges = len(recentPasswordChanges)
         if countPasswordChanges > 1 and countPasswordChanges < 3:
-            trust -= 5
+            trust -= 10
         elif countPasswordChanges >= 3 and countPasswordChanges < 6:
-            trust -= 15
-        elif countPasswordChanges >= 6:
             trust -= 20
+        elif countPasswordChanges >= 6:
+            trust -= 30
         
         # Avalia mudanca consideravel na localizacao recente
         recentLocations = self.pip.getRecentLocationAccessUser(registry, date) # Avaliação com base nos acessos recentes, para detectar mudanças bruscas na localização
         baseLocations = self.pip.getHistoryLocationAccessUser(registry, date) # Avaliação da base de acesso do ultimo mês, para detectar acesso fora da região de costume
         if recentLocations:
+            maxDiference = 0
             for recenteLoc in recentLocations:
-                timeR = ((datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - recenteLoc[2]).total_seconds() / 3600) / 24 # Diferença do tempo atual em relação ao acesso, normalizado (0, 1)
+                timeR = ((datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - recenteLoc[2]).total_seconds() / 60) / 60 # Diferença do tempo atual em relação ao acesso, normalizado (0, 1)
                 distanceR = geodesic((latitude, longitude), (recenteLoc[0], recenteLoc[1])).meters
-                diferenceR = distanceR / (timeR * 50000)
-                if (diferenceR > 1 and diferenceR < 1.3):
-                    trust -= 10
-                elif (diferenceR >= 1.3 and diferenceR < 1.5):
-                    trust -= 20
-                elif (diferenceR >= 1.5 and diferenceR < 2.0):
-                    trust -= 35
-                elif diferenceR >= 2.0:
-                    trust -= 50
+                diferenceR = distanceR / (timeR * 30000)
+                if diferenceR > maxDiference:
+                    # print(datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))))
+                    # print(recenteLoc[2])
+                    maxDiference = diferenceR
+            print(maxDiference)
+            if (maxDiference > 1 and maxDiference < 1.3):
+                trust -= 25
+            elif (maxDiference >= 1.3 and maxDiference < 1.5):
+                trust -= 38
+            elif (maxDiference >= 1.5 and maxDiference < 2.0):
+                trust -= 50
+            elif maxDiference >= 2.0:
+                trust -= 60
         if baseLocations:
             zones = []
             for baseLoc in baseLocations:
@@ -273,7 +290,7 @@ class PolicyDecisionPoint:
                 elif auxZone['count'] < 10:
                     trust -= 30
                 elif auxZone['count'] < 15:
-                    trust -= 15
+                    trust -= 20
             else:
                 trust -= 40
         else:
@@ -289,10 +306,10 @@ class PolicyDecisionPoint:
             auxHs1 = datetime.datetime.combine(nDate, employeeAttributes["wrokStart"])
             auxHs2 = datetime.datetime.combine(nDate, employeeAttributes["workEnd"])
             if auxHs1 > auxHs2:
-                if auxHs1 >= nDate:
-                    auxHs1 = auxHs1 - datetime.timedelta(days=1)
-                elif auxHs2 <= nDate:
+                if nDate > auxHs1:
                     auxHs2 = auxHs2 + datetime.timedelta(days=1)
+                elif nDate < auxHs2:
+                    auxHs1 = auxHs1 - datetime.timedelta(days=1)
             
             if nDate >= auxHs1 and nDate <= auxHs2 and auxHs1.strftime("%A") in daysWord:
                 hoursOut = 0
@@ -307,21 +324,27 @@ class PolicyDecisionPoint:
                 while auxHs1.strftime("%A") not in daysWord:
                     auxHs1 = auxHs1 + datetime.timedelta(days=1)
                 
-                auxT1 = auxHs1 - nDate
-                auxT2 = nDate - auxHs2
+                if auxHs1 > nDate:
+                    auxT1 = auxHs1 - nDate
+                else:
+                    auxT1 = nDate - auxHs1
+                if auxHs2 > nDate:
+                    auxT2 = auxHs2 - nDate
+                else:
+                    auxT2 = nDate - auxHs2
                 if auxT1 < auxT2:
                     hoursOut = auxT1.total_seconds() / 3600
                 else:
                     hoursOut = auxT2.total_seconds() / 3600
             
             if hoursOut > 0 and hoursOut <= 1:
-                trust -= 5
+                trust -= 20
             elif hoursOut > 1 and hoursOut <= 3:
-                trust -= 15
+                trust -= 40
             elif hoursOut > 3 and hoursOut <= 6:
-                trust -= 25
+                trust -= 50
             elif hoursOut > 6:
-                trust -= 35
+                trust -= 68
 
         # Avalia reduções de privilégios recentes
         reducedPrivileges = self.pip.getRecentReducedPrivilege(registry, date)
@@ -341,13 +364,17 @@ class PolicyDecisionPoint:
                     auxNetWorks[str(auxNetH.network)] += 1
                 else:
                     auxNetWorks[str(auxNetH.network)] = 1
-        if str(networkUser.network) != '172.16.10.0/24' and (not str(networkUser.network) in auxNetWorks or auxNetWorks[str(networkUser.network)] < 5):
-            trust -= 10
-        
+        if str(networkUser.network) != '172.16.10.0/24' and (not str(networkUser.network) in auxNetWorks):
+            trust -= 50
+        elif str(networkUser.network) != '172.16.10.0/24' and str(networkUser.network) in auxNetWorks:
+            if auxNetWorks[str(networkUser.network)] < 3:
+                trust -= 50
+            elif auxNetWorks[str(networkUser.network)] >= 3 and auxNetWorks[str(networkUser.network)] < 7:
+                trust -= 25
 
         if trust > 0:
             return trust
-        return 0
+        return 0.1
 
     # Avalia o dispositivo utilizado pelo usuário
     def __evaluateUserDevice(self, MAC, dfp, os, versionOs, date) -> float:
@@ -372,7 +399,7 @@ class PolicyDecisionPoint:
         if device:
             idCDB, dfpDB, osDB, versionOsDB, dateDB,statusDB, idD1DB, idD2DB, macDB = self.pip.getDeviceByMAC(MAC)
             if (dfpDB != dfp) or (osDB != os) or (versionOsDB != versionOs):
-                trust -= 20
+                trust -= 70
 
         # Dispositivo com verção de sistema menos seguros
         with open(oss.path.dirname(oss.path.abspath(__file__)) + "/deviceVersionRisk.json") as file:
@@ -383,48 +410,61 @@ class PolicyDecisionPoint:
                     if os == deviceRisk["Operational System"] and versionOs == deviceRisk["Version"]:
                         match (deviceRisk["Risk"]):
                             case "medium":
-                                trust -= 5
+                                trust -= 18
                             case "high":
-                                trust -= 10
+                                trust -= 26
                             case "unacceptably high":
-                                trust -= 20
+                                trust -= 38
                         unknownRisk = False
                         break
                 if unknownRisk:
-                    trust -= 20
+                    trust -= 38
 
-        # Dispositivo nunca utilizado
-        if not device:
+        # Dispositivo recente ou nunca utilizado
+        numberAccess = self.pip.getNumberAccessByDevice(MAC)
+        if not numberAccess or numberAccess == 0:
             trust -= 60
+        elif numberAccess >= 1 and numberAccess < 9:
+            trust -= 40
+        elif numberAccess >= 9 and numberAccess < 15:
+            trust -= 30
+        elif numberAccess >= 15 and numberAccess < 23:
+            trust -= 15
         
         if trust > 0:
             return trust
-        return 0
+        return 0.1
 
     # Avalia o histórico de acesso do usuário
     def __evaluateUserHistory(self, registry, date) -> float:
+        trust = 100
 
-        # Média da confiança das ultimas X requisições
-        trust = self.pip.getAverageTrustAccess(registry)
-        if not trust:
-            trust = 0
-        trust = (100 + trust) / 2
+        # Avalia quantidade de acessos do usuário (usuários recentes)
+        numberAccess = self.pip.getNumberAccessByUser(registry)
+        if not numberAccess:
+            numberAccess = 0
+        if numberAccess < 10:
+            trust -= 40
+        elif numberAccess < 25:
+            trust -= 20
+        elif numberAccess < 35:
+            trust -= 10
 
         historyWithSensibility = self.pip.getAccessHistoryWithSensibility(registry, date)
 
         # Frequência de acesso recente à recursos altamente sinsíveis
         if historyWithSensibility:
             countHighlySensitive = 0
-            timeLimit = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3)))
+            timeLimit = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=3)
             for hs in historyWithSensibility:
                 if hs[14] >= 75 and hs[9] > timeLimit:
                     countHighlySensitive += 1
             if countHighlySensitive >= 5 and countHighlySensitive < 8:
-                trust -= 15
+                trust -= 12
             elif countHighlySensitive >= 8 and countHighlySensitive < 11:
-                trust -= 30
+                trust -= 20
             elif countHighlySensitive >= 11:
-                trust -= 45
+                trust -= 28
 
         # Multiplas requisições negadas (verificar restrição de data)
         if historyWithSensibility:
@@ -438,6 +478,13 @@ class PolicyDecisionPoint:
                 trust -= 30
             elif countDeniAccess >= 13:
                 trust -= 45
+        
+        # Média da confiança calculada com a média do histórico
+        avgTrust = self.pip.getAverageTrustLastAccess(registry)
+        print("Média: " + str(avgTrust))
+        if not avgTrust:
+            avgTrust = 0
+        trust = (trust + avgTrust) / 2
 
         if trust > 0:
             return trust

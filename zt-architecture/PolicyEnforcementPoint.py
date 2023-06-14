@@ -93,6 +93,10 @@ class PolicyEnforcementPoint:
                     conn.sendall(result.encode('utf-8'))
                 case Response.REAUTHENTICATION_REQUIRED:
                     if body["idAccess"]:
+                        if opReauthentication["inReauthentication"]:
+                            pdp.registerDeniedForNotReauthentication(opReauthentication["idAccess"])
+                            opReauthentication["inReauthentication"] = False
+                            opReauthentication["idAccess"] = None
                         logging.info(f'Reauthentication required for {addr}')   
                         opReauthentication["inReauthentication"] = True
                         opReauthentication["idAccess"] = body["idAccess"]
@@ -110,6 +114,8 @@ class PolicyEnforcementPoint:
                         responseResource = "REAUTHENTICATION_ALLOWED\nTOKEN " + body['token'] + "\nRESPONSE " + sockResource.recv(1024).decode('utf-8')
                         conn.sendall(responseResource.encode('utf-8'))
                         sockResource.close()
+                        opReauthentication["inReauthentication"] = False
+                        opReauthentication["idAccess"] = None
                     else:
                         logging.error(f'Internal server error')
                         result = "INTERNAL_SERVER_ERROR"
@@ -132,6 +138,10 @@ class PolicyEnforcementPoint:
                         logging.error(f'Updated password error for {addr}')
                         result = "INTERNAL_SERVER_ERROR"
                         conn.sendall(result.encode('utf-8'))
+                case Response.UNAUTHORIZED_PASSWORD_UPDATE:
+                    logging.info(f'Unauthorized password update for {addr}')
+                    result = "UNAUTHORIZED_PASSWORD_UPDATE"
+                    conn.sendall(result.encode('utf-8'))
                 case Response.INTERNAL_SERVER_ERROR:
                     logging.error(f'Internal server error')
                     result = "INTERNAL_SERVER_ERROR"
@@ -144,7 +154,8 @@ class PolicyEnforcementPoint:
                     conn.close()
                     break  
 
-            if decision != Response.REAUTHENTICATION_REQUIRED:
+            if opReauthentication["inReauthentication"] and (decision != Response.REAUTHENTICATION_REQUIRED and decision != Response.REAUTHENTICATION_ALLOWED):
+                pdp.registerDeniedForNotReauthentication(opReauthentication["idAccess"])
                 opReauthentication["inReauthentication"] = False
                 opReauthentication["idAccess"] = None
         logging.info(f'Connection closed with {addr}')
