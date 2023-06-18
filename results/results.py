@@ -32,28 +32,41 @@ except Exception as e:
     print(e)
     exit()
 
-x_dataAllowed = []
-y_dataAllowed = []
-x_dataDenied = []
-y_dataDenied = []
+x_dataAllowedNormal = []
+y_dataAllowedNormal = []
+x_dataAllowedReauthenticate = []
+y_dataAllowedReauthenticate = []
+x_dataDeniedNormal = []
+y_dataDeniedNormal = []
+x_dataDeniedReauthenticate = []
+y_dataDeniedReauthenticate = []
 x_sensibility = []
 y_sensibility = []
 for access in accessList:
     x_sensibility.append(access[9])
-    y_sensibility.append(access[14])
-    if access[10] == 'Permitido':
-        x_dataAllowed.append(access[9])
-        y_dataAllowed.append(access[12])
+    y_sensibility.append(access[15])
+    if access[10] == 'Permitido' and access[14] == False:
+        x_dataAllowedNormal.append(access[9])
+        y_dataAllowedNormal.append(access[12])
+    elif access[10] == 'Permitido' and access[14] == True:
+        x_dataAllowedReauthenticate.append(access[9])
+        y_dataAllowedReauthenticate.append(access[12])
+    elif access[14] == False:
+        x_dataDeniedNormal.append(access[9])
+        y_dataDeniedNormal.append(access[12])
     else:
-        x_dataDenied.append(access[9])
-        y_dataDenied.append(access[12])
+        x_dataDeniedReauthenticate.append(access[9])
+        y_dataDeniedReauthenticate.append(access[12])
 
-
-
-plt.plot(x_sensibility, y_sensibility, color='yellow')
-plt.scatter(x_dataAllowed, y_dataAllowed, color='blue')
-plt.scatter(x_dataDenied, y_dataDenied, color='red')
+plt.plot(x_sensibility, y_sensibility, color='gray', linewidth=1.8, zorder=1)
+plt.scatter(x_dataAllowedNormal, y_dataAllowedNormal, color='green', s=70, zorder=2)
+plt.scatter(x_dataAllowedReauthenticate, y_dataAllowedReauthenticate, color='blue', s=70, zorder=2)
+plt.scatter(x_dataDeniedNormal, y_dataDeniedNormal, color='red', s=70, zorder=2)
+plt.scatter(x_dataDeniedReauthenticate, y_dataDeniedReauthenticate, color='orange', s=70, zorder=2)
 plt.ylim(0, 100)
+
+# for i in range(len(x_dataAllowed)):
+#     plt.text(x_dataAllowed[i], y_dataAllowed[i], str(y_dataAllowed[i]), ha='center', va='bottom')
 
 
 date_formatter = mdates.DateFormatter('%Y-%m-%d %H:%M:%S')
@@ -61,8 +74,10 @@ plt.gca().xaxis.set_major_formatter(date_formatter)
 
 plt.gcf().autofmt_xdate()
 
-plt.xlabel('Tempo')
-plt.ylabel('Confiança')
-plt.title('Gráfico de Acesso do Usuário: '+userRegistry)
+plt.xlabel('Tempo', fontsize=16)
+plt.ylabel('Confiança/Sensibilidade', fontsize=16)
+plt.title('Dispositivo com Baixa Segurança 3', fontsize=16)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
 
 plt.show()

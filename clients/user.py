@@ -14,7 +14,7 @@ def connect():
         password = None
 
         # Arquivo com as instâncias de acesso
-        with open(os.path.dirname(os.path.abspath(__file__)) + "/instance-normal.json") as file:
+        with open(os.path.dirname(os.path.abspath(__file__)) + "/instance-lowsecuritydevice3.json") as file:
             instance = json.load(file)
         
         # Conexão com o servidor Zero Trust (aceitando certificado ssl auto assinado)

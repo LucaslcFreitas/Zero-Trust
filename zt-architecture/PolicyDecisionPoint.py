@@ -16,6 +16,7 @@ class PolicyDecisionPoint:
     def __init__(self) -> None:
         self.pip = PolicyInformationPoint()
 
+    
     def policyAdministrator(self, message):
         lines = message.strip().split('\n')
         data = {}
@@ -63,14 +64,14 @@ class PolicyDecisionPoint:
             return Response.ACCESS_DENIED, None
 
         try:
-            # Calcula a confiança com base no usuário e contexto
-            userTrust = self.__evaluateUserAtributesAndContext(user['registry'], data['TIME'], data['LATITUDE'], data['LONGITUDE'], data['IP_ADDRESS'], user['type'])
+            # Calcula a confiança com base no contexto
+            userTrust = self.__evaluateContext(user['registry'], data['TIME'], data['LATITUDE'], data['LONGITUDE'], data['IP_ADDRESS'], user['type'])
         
-            # Calcula a confiança com base no dispositivo do usuário
-            deviceTrust = self.__evaluateUserDevice(data['MAC'], data['DFP'], data['OS'], data['VERSION_OS'], data['TIME'])
+            # Calcula a confiança com base no dispositivo
+            deviceTrust = self.__evaluateDevice(data['MAC'], data['DFP'], data['OS'], data['VERSION_OS'], data['TIME'])
         
             # Calcula a confiança com base no histórico de acesso
-            historyTrust = self.__evaluateUserHistory(user['registry'], data['TIME'])
+            historyTrust = self.__evaluateHistory(user['registry'], data['TIME'])
 
             # Pega a sensibilidade do recurso
             sensitivity = self.pip.getResourceSensibilityByName(data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'])
@@ -210,7 +211,7 @@ class PolicyDecisionPoint:
         return self.pip.checkTokenValidity(token, date)
     
     # Avalia os atributos do usuário
-    def __evaluateUserAtributesAndContext(self, registry, date, latitude, longitude, ip, typeUser) -> float:
+    def __evaluateContext(self, registry, date, latitude, longitude, ip, typeUser) -> float:
         trust = 100.0
         
         # Avalia logins recentes
@@ -376,8 +377,8 @@ class PolicyDecisionPoint:
             return trust
         return 0.1
 
-    # Avalia o dispositivo utilizado pelo usuário
-    def __evaluateUserDevice(self, MAC, dfp, os, versionOs, date) -> float:
+    # Avalia o dispositivo utilizado
+    def __evaluateDevice(self, MAC, dfp, os, versionOs, date) -> float:
         trust = 100.0
         
         device = self.pip.getDeviceByMAC(MAC)
@@ -435,11 +436,11 @@ class PolicyDecisionPoint:
             return trust
         return 0.1
 
-    # Avalia o histórico de acesso do usuário
-    def __evaluateUserHistory(self, registry, date) -> float:
+    # Avalia o histórico de acesso
+    def __evaluateHistory(self, registry, date) -> float:
         trust = 100
 
-        # Avalia quantidade de acessos do usuário (usuários recentes)
+        # Avalia quantidade de acessos (usuários ou dispositivos recentes)
         numberAccess = self.pip.getNumberAccessByUser(registry)
         if not numberAccess:
             numberAccess = 0
@@ -457,7 +458,7 @@ class PolicyDecisionPoint:
             countHighlySensitive = 0
             timeLimit = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))) - datetime.timedelta(hours=3)
             for hs in historyWithSensibility:
-                if hs[14] >= 75 and hs[9] > timeLimit:
+                if hs[15] >= 75 and hs[9] > timeLimit:
                     countHighlySensitive += 1
             if countHighlySensitive >= 5 and countHighlySensitive < 8:
                 trust -= 12

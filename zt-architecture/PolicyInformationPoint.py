@@ -595,7 +595,7 @@ class PolicyInformationPoint:
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca) VALUES ("+str(idUser)+", (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), "+str(idPermission)+", "+str(idSubResource)+", "+str(idSensibility)+", (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ip+"', "+str(trust)+") RETURNING id")
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", \"idDispositivo\", latitude, longitude, data, resultado, rede, confianca, reautenticacao) VALUES ("+str(idUser)+", (SELECT id FROM \"zt-ehealth\".\"Token\" WHERE hash = '"+token+"' AND status = 'Ativo'), "+str(idPermission)+", "+str(idSubResource)+", "+str(idSensibility)+", (SELECT id FROM \"zt-ehealth\".\"Dispositivo\" WHERE \"MAC\" = '"+MAC+"'), '"+latitude+"', '"+longitude+"', '"+date+"', '"+result+"', '"+ip+"', "+str(trust)+", true) RETURNING id")
                 accessId = cursor.fetchone()[0]
                 self.connection.commit()
                 if accessId:
@@ -611,7 +611,7 @@ class PolicyInformationPoint:
 
         try:
             with self.connection.cursor() as cursor:
-                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", latitude, longitude, data, resultado, rede, confianca, \"idDispositivoTMP\") VALUES ("+str(idUser)+", "+str(idToken)+", "+str(idPermission)+", "+str(idSubResource)+", "+str(idSensibility)+", '"+latitude+"', '"+longitude+"', '"+date.strftime("%Y-%m-%d %H:%M:%S.%f%z")+"', '"+result+"', '"+ip+"', "+str(trust)+", "+str(idDeviceTMP)+") RETURNING id")
+                cursor.execute("INSERT INTO \"zt-ehealth\".\"Acesso\"(\"idUsuario\", \"idToken\", \"idPermissao\", \"idSubRecurso\", \"idSensibilidadeSubRecurso\", latitude, longitude, data, resultado, rede, confianca, \"idDispositivoTMP\", reautenticacao) VALUES ("+str(idUser)+", "+str(idToken)+", "+str(idPermission)+", "+str(idSubResource)+", "+str(idSensibility)+", '"+latitude+"', '"+longitude+"', '"+date.strftime("%Y-%m-%d %H:%M:%S.%f%z")+"', '"+result+"', '"+ip+"', "+str(trust)+", "+str(idDeviceTMP)+", true) RETURNING id")
                 accessId = cursor.fetchone()
                 self.connection.commit()
                 if accessId:
