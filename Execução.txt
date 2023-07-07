@@ -1,0 +1,10 @@
+Para execução deste trabalho:
+	- Primeiramente inicie os recursos (arquivo resource.py)
+	- Inicie o servidor Zero Trust (arquivo PoliciEnforcementPoint.py)
+	- Inicie as operações do usuário (arquivo user.py) selecionando cada cenário
+
+Para visualizar os resultados, execute o arquivo results.py
+
+OBS: a cada execução de cenário, reset o banco de dados (pelo arquivo reset.py)
+
+*O backup do banco de dados pode ser encontrado em /database/database.sql

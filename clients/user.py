@@ -2,19 +2,18 @@ import socket
 import ssl
 import os
 import json
+import time
 
 HOST = '127.0.0.1'
 PORT = 5000
 
-def connect():
+def startAccess(test):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        # Dados de usuário
-        token = None
-        registry = None
-        password = None
+        # Dados dos usuários
+        users = {}
 
         # Arquivo com as instâncias de acesso
-        with open(os.path.dirname(os.path.abspath(__file__)) + "/instance-lowsecuritydevice3.json") as file:
+        with open(os.path.dirname(os.path.abspath(__file__)) + "/scenarios/"+test+".json") as file:
             instance = json.load(file)
         
         # Conexão com o servidor Zero Trust (aceitando certificado ssl auto assinado)
@@ -43,24 +42,25 @@ def connect():
                             key, value = line.split(' ', 1)
                             data[key] = value
                         if data['RESULT'] == 'AUTHORIZED_LOGIN':
-                            registry = access['REGISTRY']
-                            password = access['PASSWORD']
+                            if access['REGISTRY'] not in users:
+                                users[access['REGISTRY']] = {'PASSWORD': None, 'TOKEN': None}
+                            users[access['REGISTRY']]['PASSWORD'] = access['PASSWORD']
+                            users[access['REGISTRY']]['TOKEN'] = data['TOKEN']
                             print(data['RESULT'])
-                            token = data['TOKEN']
-                        elif token == None:
+                        elif users[access['REGISTRY']]['TOKEN'] == None:
                             print("Login error")
                             break
                     
                     case 'ACCESS':
-                        message = getAccess(access['RESOURCE'], access['SUB_RESOURCE'], access['TYPE_ACTION'], token, access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'],  access['VERSION_OS'], access['TIME'])
+                        message = getAccess(access['RESOURCE'], access['SUB_RESOURCE'], access['TYPE_ACTION'], users[access['REGISTRY']]['TOKEN'], access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'],  access['VERSION_OS'], access['TIME'])
                                                 
                         conn.sendall(message.encode('utf-8'))
 
                         data = conn.recv(1024)
                         response = data.decode('utf-8')
 
-                        if response == "AUTHENTICATION_REQUIRED" and registry and password:
-                            message = getLogin(registry, password, access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
+                        if response == "AUTHENTICATION_REQUIRED" and access['REGISTRY'] in users:
+                            message = getLogin(access['REGISTRY'], users[access['REGISTRY']]['PASSWORD'], access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
                             
                             conn.sendall(message.encode('utf-8'))
 
@@ -73,19 +73,19 @@ def connect():
                                 key, value = line.split(' ', 1)
                                 data[key] = value
                             if data['RESULT'] == 'AUTHORIZED_LOGIN':
-                                token = data['TOKEN']
+                                users[access['REGISTRY']]['TOKEN'] = data['TOKEN']
 
-                                message = getAccess(access['RESOURCE'], access['SUB_RESOURCE'], access['TYPE_ACTION'], token, access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
+                                message = getAccess(access['RESOURCE'], access['SUB_RESOURCE'], access['TYPE_ACTION'], users[access['REGISTRY']]['TOKEN'], access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
                                 
                                 conn.sendall(message.encode('utf-8'))
                                 data = conn.recv(1024)
                                 response = data.decode('utf-8')
-                            elif token == None:
+                            elif users[access['REGISTRY']]['TOKEN'] == None:
                                 print("Authentication for access error")
                                 break
 
                         if response == "REAUTHENTICATION_REQUIRED" and access['REAUTHENTICATE']:
-                            message = getReauthenticate(token, registry, password, access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
+                            message = getReauthenticate(users[access['REGISTRY']]['TOKEN'], access['REGISTRY'], users[access['REGISTRY']]['PASSWORD'], access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
                                                         
                             conn.sendall(message.encode('utf-8'))
 
@@ -98,7 +98,7 @@ def connect():
                                 for line in lines[1:]:
                                     key, value = line.split(' ', 1)
                                     data[key] = value
-                                token = data['TOKEN']
+                                users[access['REGISTRY']]['TOKEN'] = data['TOKEN']
                                 print(response)
                             else:
                                 print(data['RESULT'])
@@ -106,7 +106,7 @@ def connect():
                             print(response)
 
                     case 'UPDATE_PASSWORD':
-                        message = getUpdatePassword(token, password, access['NEW_PASSWORD'], access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
+                        message = getUpdatePassword(users[access['REGISTRY']]['TOKEN'], users[access['REGISTRY']]['PASSWORD'], access['NEW_PASSWORD'], access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
                         
                         conn.sendall(message.encode('utf-8'))
 
@@ -119,16 +119,17 @@ def connect():
                             key, value = line.split(' ', 1)
                             data[key] = value
                         if data['RESULT'] == 'UPDATED_PASSWORD':
-                            password = access['NEW_PASSWORD']
+                            users[access['REGISTRY']]['PASSWORD'] = access['NEW_PASSWORD']
                             print(data['RESULT'])
-                            token = data['TOKEN']
+                            users[access['REGISTRY']]['TOKEN'] = data['TOKEN']
                         elif data['RESULT'] == 'UNAUTHORIZED_PASSWORD_UPDATE':
                             print("UNAUTHORIZED_PASSWORD_UPDATE")
-                        elif token == None:
+                        elif users[access['REGISTRY']]['TOKEN'] == None:
                             print("Update password error")
                             break
 
         conn.close()
+        print("EFETUE A LIMPEZA DO BANCO DE DADOS ANTES DE REALIZAR O PRÓXIMO CENÁRIO")
 
     print('Closed connection')
 
@@ -193,4 +194,47 @@ def getUpdatePassword(token, oldPassword, newPassword, ip, latitude, longitude, 
     return message
 
 if __name__ == '__main__':
-    connect()
+    print("SELECIONE O CENÁRIO:")
+    print("1 - Cenário 1 - Acesso Normal")
+    print("2 - Cenário 2 - Roubo de Token - Teste 1")
+    print("3 - Cenário 2 - Roubo de Token - Teste 2")
+    print("4 - Cenário 3 - Roubo de Credenciais")
+    print("5 - Cenário 4 - Ataque de Força Bruta - Sem Sucesso")
+    print("6 - Cenário 4 - Ataque de Força Bruta - Com Sucesso")
+    print("7 - Cenário 5 - Dispositivo Compartilhado")
+    print("8 - Cenário 6 - Acesso fora do Horário - Teste 1")
+    print("9 - Cenário 6 - Acesso fora do Horário - Teste 2")
+    print("10 - Cenário 6 - Acesso fora do Horário - Teste 3")
+    print("11 - Cenário 6 - Acesso fora do Horário - Teste 4")
+    print("12 - SAIR")
+
+    option = input("Opção: ")
+    while option != 13:
+        match option:
+            case "1":
+                startAccess("instance-C1")
+            case "2":
+                startAccess("instance-C2T1")
+            case "3":
+                startAccess("instance-C2T2")
+            case "4":
+                startAccess("instance-C3")
+            case "5":
+                startAccess("instance-C4T1")
+            case "6":
+                startAccess("instance-C4T2")
+            case "7":
+                startAccess("instance-C5")
+            case "8":
+                startAccess("instance-C6T1")
+            case "9":
+                startAccess("instance-C6T2")
+            case "10":
+                startAccess("instance-C6T3")
+            case "11":
+                startAccess("instance-C6T4")
+            case "12":
+                break
+            case _:
+                print("Opção Inválida!")
+        option = input("Opção: ")

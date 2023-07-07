@@ -76,12 +76,8 @@ class PolicyDecisionPoint:
             # Pega a sensibilidade do recurso
             sensitivity = self.pip.getResourceSensibilityByName(data['RESOURCE'], data['SUB_RESOURCE'], data['TYPE_ACTION'])
         except Exception as e:
-            print(e)
             return Response.INTERNAL_SERVER_ERROR, None
 
-        print("User trust: " + str(userTrust))
-        print("Device trust: " + str(deviceTrust))
-        print("History trust: " + str(historyTrust))
         # Calcula a confinça final
         trust = 0
         if historyTrust == 0:
@@ -234,7 +230,7 @@ class PolicyDecisionPoint:
         countPasswordChanges = 0
         if recentPasswordChanges:
             countPasswordChanges = len(recentPasswordChanges)
-        if countPasswordChanges > 1 and countPasswordChanges < 3:
+        if countPasswordChanges >= 1 and countPasswordChanges < 3:
             trust -= 10
         elif countPasswordChanges >= 3 and countPasswordChanges < 6:
             trust -= 20
@@ -254,15 +250,15 @@ class PolicyDecisionPoint:
                     # print(datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))))
                     # print(recenteLoc[2])
                     maxDiference = diferenceR
-            print(maxDiference)
+            
             if (maxDiference > 1 and maxDiference < 1.3):
-                trust -= 25
+                trust -= 30
             elif (maxDiference >= 1.3 and maxDiference < 1.5):
-                trust -= 38
+                trust -= 42
             elif (maxDiference >= 1.5 and maxDiference < 2.0):
-                trust -= 50
+                trust -= 55
             elif maxDiference >= 2.0:
-                trust -= 60
+                trust -= 68
         if baseLocations:
             zones = []
             for baseLoc in baseLocations:
@@ -392,9 +388,9 @@ class PolicyDecisionPoint:
                     if use[9] == 'Permitido' and use[0] not in usersIndex:
                         usersIndex.append(use[0])
             if len(usersIndex) > 1 and len(usersIndex) <= 3:
-                trust -= 30
+                trust -= 25
             elif len(usersIndex) > 3:
-                trust -= 50
+                trust -= 40
 
         # Alterações nas características do dispositivo (device finger print)
         if device:
@@ -440,7 +436,7 @@ class PolicyDecisionPoint:
     def __evaluateHistory(self, registry, date) -> float:
         trust = 100
 
-        # Avalia quantidade de acessos (usuários ou dispositivos recentes)
+        # Avalia quantidade de acessos
         numberAccess = self.pip.getNumberAccessByUser(registry)
         if not numberAccess:
             numberAccess = 0
@@ -473,16 +469,18 @@ class PolicyDecisionPoint:
             for hs in historyWithSensibility:
                 if hs[10] == "Negado":
                     countDeniAccess += 1
-            if countDeniAccess >= 4 and countDeniAccess < 8:
+            if countDeniAccess >= 3 and countDeniAccess < 8:
                 trust -= 15
-            elif countDeniAccess >= 8 and countDeniAccess < 13:
+            elif countDeniAccess >= 8 and countDeniAccess < 12:
                 trust -= 30
-            elif countDeniAccess >= 13:
-                trust -= 45
+            elif countDeniAccess >= 12 and countDeniAccess < 15:
+                trust -= 55
+            elif countDeniAccess >= 15:
+                trust -= 70
         
         # Média da confiança calculada com a média do histórico
         avgTrust = self.pip.getAverageTrustLastAccess(registry)
-        print("Média: " + str(avgTrust))
+        
         if not avgTrust:
             avgTrust = 0
         trust = (trust + avgTrust) / 2

@@ -46,8 +46,9 @@ class PolicyEnforcementPoint:
             "inReauthentication": False,
             "idAccess": None
         }
-
+        tmpCount = 0
         while(True):
+
             decision = None
             body = None
 
@@ -56,6 +57,11 @@ class PolicyEnforcementPoint:
                 break
             message = data.decode('utf-8')
 
+            if "REAUTHENTICATION" not in message:
+                tmpCount += 1
+
+            if tmpCount >= 101:
+                print(tmpCount)
             # Operação de reautenticação
             if opReauthentication["inReauthentication"]:
                 message += "ID_ACCESS "+str(opReauthentication["idAccess"])+"\n"
