@@ -1471,22 +1471,6 @@
     {
         "REAUTHENTICATE": true,
         "TYPE": "ACCESS",
-        "RESOURCE": "Monitoramento Remoto do Paciente",
-        "SUB_RESOURCE": "Registro de Sinais Vitais",
-        "TYPE_ACTION": "Leitura",
-        "REGISTRY": "460.395.930-32",
-        "IP_ADDRESS": "172.16.10.1/24",
-        "LATITUDE": "-21.7866807",
-        "LONGITUDE": "-43.368839",
-        "MAC": "CA-14-17-8G-9E-9F",
-        "DFP": "29930a0e2ea9e88d47e59571862aaf2c01781cbef7dbac0615e9efe383c8235b",
-        "OS": "Windows 10",
-        "VERSION_OS": "21H2",
-        "TIME": "2023-06-15 15:07:19.047062"
-    },
-    {
-        "REAUTHENTICATE": true,
-        "TYPE": "ACCESS",
         "RESOURCE": "Registro Eletronico de Saude",
         "SUB_RESOURCE": "Prescricoes Medicas",
         "TYPE_ACTION": "Escrita",
