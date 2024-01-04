@@ -25,6 +25,9 @@ def startAccess(test):
         conn.connect((HOST, PORT))
         print(f'Conected to {HOST}:{PORT}')
 
+        average_time = 0.0
+        access_count = 0
+
         if instance:
             for access in instance:
                 match (access['TYPE']):
@@ -54,10 +57,17 @@ def startAccess(test):
                     case 'ACCESS':
                         message = getAccess(access['RESOURCE'], access['SUB_RESOURCE'], access['TYPE_ACTION'], users[access['REGISTRY']]['TOKEN'], access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'],  access['VERSION_OS'], access['TIME'])
                                                 
-                        conn.sendall(message.encode('utf-8'))
+                        time_start = time.time()
 
+                        conn.sendall(message.encode('utf-8'))
                         data = conn.recv(1024)
+                        
+                        time_end = time.time()
+
                         response = data.decode('utf-8')
+
+                        average_time += (time_end - time_start)
+                        access_count += 1
 
                         if response == "AUTHENTICATION_REQUIRED" and access['REGISTRY'] in users:
                             message = getLogin(access['REGISTRY'], users[access['REGISTRY']]['PASSWORD'], access['IP_ADDRESS'], access['LATITUDE'], access['LONGITUDE'], access['MAC'], access['DFP'], access['OS'], access['VERSION_OS'], access['TIME'])
@@ -127,6 +137,7 @@ def startAccess(test):
                         elif users[access['REGISTRY']]['TOKEN'] == None:
                             print("Update password error")
                             break
+            print(f'Tempo médio de acesso: {(average_time/access_count)*1000} ms')
 
         conn.close()
         print("EFETUE A LIMPEZA DO BANCO DE DADOS ANTES DE REALIZAR O PRÓXIMO CENÁRIO")

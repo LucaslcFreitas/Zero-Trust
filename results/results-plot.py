@@ -45,7 +45,8 @@ y_sensibility = []
 brasil_tz = pytz.timezone('America/Sao_Paulo')
 for access in accessList:
     # if access[9] >= datetime.datetime.strptime("2023-06-15 13:35:00.047062", "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))): # instance C5
-    # if access[9] >= datetime.datetime.strptime("2023-06-15 16:00:00.047062", "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))): # instance C6
+    # if access[9] <= datetime.datetime.strptime("2023-06-15 15:16:00.047062", "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))): # instance C6
+    # if access[9] >= datetime.datetime.strptime("2023-06-15 15:19:00.047062", "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))): # instance C6
     if True:
         x_sensibility.append(access[9] - datetime.timedelta(hours=3))
         y_sensibility.append(access[15])
@@ -75,7 +76,7 @@ plt.gca().xaxis.set_major_formatter(date_formatter)
 plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
 
 plt.gcf().autofmt_xdate()
-plt.grid(True, linestyle='--', linewidth=0.5, color='gray', alpha=0.5)
+plt.grid(True, linestyle='--', linewidth=0.9, color='gray', alpha=0.5)
 plt.xlabel('Tempo', fontsize=16)
 plt.ylabel('Confiança/Sensibilidade', fontsize=16)
 plt.title('Acessos', fontsize=16)
